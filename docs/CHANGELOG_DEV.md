@@ -4,6 +4,90 @@ Vollständiges Fortschritts-Log von Shutter Pilot, ausgelagert aus `CLAUDE.md`, 
 
 Bei Fragen zur Historie: hier nachlesen oder `grep`/`graphify` benutzen, bevor eine Vermutung über eine frühere Entscheidung geäußert wird.
 
+### 2026-09-08 – 2.22.3: der Merker, der die Hand nicht bemerkte
+
+Zwei Forumsmeldungen vom selben Tag (community-smarthome.com/11378), beide
+zuerst gegen den Code nachgerechnet statt geglaubt – Charly ohne, bjoerg mit
+Einstellungs-Export.
+
+**Fund 1 (Charly): eine von Hand voll hochgefahrene Markise – nein, ein
+Rollladen – fuhr beim Fensteröffnen wieder herunter.** Charlys Beitrag:
+Rollladen morgens von Hand hochgefahren, kurz danach (nicht während der
+Fahrt) das Fenster geöffnet und nach ein paar Minuten wieder geschlossen –
+der Rollladen fuhr herunter, das automatische Öffnen (Sonnenstand + Zeit)
+sollte laut ihm erst später greifen. Ursache in `window_trigger.py:308`:
+`shaded = is_cover_sun_protected(data, cover_entity)` gilt seit d9f79b1
+(2.15.0) als *unbedingter* Auslösegrund für den Fensterkontakt – „Shading
+counts as a reason to react, whatever the position". `elevation.py` löscht
+diesen Merker aber bewusst nicht, wenn jemand den Rollladen von Hand aus der
+Beschattung herausfährt (`forget_shading_for_cover()`: „Deliberately not
+called automatically when a foreign drive is noticed" – das ist Absicht,
+damit `resume_automation` einen Sinn hat). Reproduziert: Rollladen manuell
+auf 100 %, Beschattungs-Merker aus einer noch aktiven oder von der letzten
+Beschattung übrig gebliebenen Auswertung steht auf `True`, Fenster geht auf
+– der Trigger fährt trotz `opens_cover=False` (Zielposition liegt unter der
+aktuellen) auf die Lüftungsposition herunter, genau das, was der
+Code-Kommentar eine Zeile darüber ausdrücklich verbietet („during daytime
+... must NOT force the cover into a ventilation position").
+
+Behoben mit einer neuen `_is_cover_effectively_open()` (spiegelbildlich zu
+`_is_cover_effectively_closed()`, gleiche 8-%-Toleranz): der `shaded`-Bypass
+gilt nur noch, solange der Rollladen nicht bereits effektiv offen steht.
+Der ursprüngliche Grund für den unbedingten Bypass (heinzies Fall aus
+2.15.0: ein an der Beschattungsposition, z. B. 25 %, geparkter Rollladen
+muss trotzdem reagieren, damit die Terrassentür nicht davor hängen bleibt)
+bleibt unberührt – dort steht der Rollladen tatsächlich noch an seiner
+Beschattungshöhe, nicht bei 100 %. Gegenprobe mit genau diesem Altfall
+eigens im neuen Test mitgeführt.
+
+**Fund 2 (bjoerg, Post 139, https://community-smarthome.com/t/11378/139):
+eine vorgemerkte Nachhol-Fahrt überlebte zwei manuelle Fahrten und drohte,
+später gegen einen längst anders positionierten Rollladen zu feuern.**
+Sein eigentliches Problem – der Rollladen fuhr morgens nicht automatisch
+hoch – ist **kein Codefehler**: er hatte das Schlafzimmerfenster abends
+offen (Rollladen entsprechend auf `position_when_window_open`=95 %),
+per Taster am Bett auf 35 % zugefahren, und `manual_override` steht für
+den Bereich auf `never`. Nachgerechnet: `manual_position_is_a_close()`
+vergleicht 35 % gegen `position_closed`=0 mit 8 % Toleranz – nicht nah
+genug, also zählt die Fahrt als echter Override, der laut `never` bis zum
+nächsten Schließen bestehen bleibt. Geschlossen wurde die Balkontür seitdem
+nicht (nur auf Kipp gestellt) – die Automatik verhält sich also exakt wie
+dokumentiert, keine Regression durch 2.22.2 (dessen Änderungen lagen in
+`services.py`/`window_trigger.py`, nicht in diesem Pfad). Wer eine
+nächtliche Teilfahrt nicht bis zum nächsten echten Fensterschluss als
+Override gewertet haben will, nutzt `manual_override: daily` statt `never`
+– dann gilt der Override nur für den Kalendertag, an dem er gesetzt wurde.
+
+Sein Export zeigte aber einen echten, verwandten Fehler: unter „wartende
+Nachhol-Fahrten" stand sein Rollladen noch, **obwohl er ihn längst von Hand
+wieder auf 100 % gefahren hatte**. `drive_after_close_pending` – gesetzt
+von `brightness.py::_run_down`, weil das Fenster beim abendlichen
+Zufahren offen stand – wird ausschließlich durch ein tatsächliches
+„Fenster geschlossen"-Ereignis konsumiert (`_apply_window_closed()` in
+`window_trigger.py`). Zwei manuelle Fahrten dazwischen (nachts auf 35 %,
+morgens auf 100 %) ließen die Vormerkung unberührt stehen. Reproduziert:
+schließt das Fenster irgendwann später am Tag, völlig unabhängig vom
+nächtlichen Geschehen, fährt der längst von Hand wieder geöffnete
+Rollladen unerwartet auf die überholte Vormerkung von gestern Abend (0 %)
+zu – eine Fahrt, die zu dem Zeitpunkt niemand mehr will.
+
+Behoben in `cover_tracker.py::_on_cover_state_change`: dieselbe Stelle, die
+bei einer erkannten Fremd-/Handfahrt bereits `note_manual_position()` und
+`forget_commanded_position()` aufruft, ruft jetzt zusätzlich
+`forget_drive_after_close()` auf. **Dieselbe Fehlerklasse wie 2.21.3, wie
+Fund 2 aus 2.22.2 und wie `note_manual_position()` (2.17.0) selbst:** ein
+Merker, der eine Handlung überlebt, für die er nicht gedacht war – diesmal
+war es nicht der Fenstertrigger-Zyklus, sondern die davon unabhängige
+Nachhol-Fahrt-Vormerkung, die dieselbe manuelle Fahrt nicht mitbekam.
+
+**Verifiziert:** `pytest` 829 Tests grün (2 neue). Für beide Funde je eine
+echte Gegenprobe – Fix testweise entschärft, genau der zugehörige neue Test
+fiel, alle anderen 8xx blieben grün, danach Fix wiederhergestellt und volle
+Suite erneut grün. Neue Dateien: `tests/test_window_trigger_shaded_manual_
+reopen.py` (mit Gegenprobe für den heinzie-Altfall im selben Test),
+`tests/test_manual_move_clears_pending_drive.py`. **Nicht im Browser
+geprüft** – reine Backend-Logik, keine Panel-Änderung.
+
 ### 2026-09-06 – 2.22.2: drei Schlösser, die eine Hintertür hatten
 
 Kein Forumsbeitrag – eine beauftragte, vollständige Analyse der gesamten

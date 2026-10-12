@@ -84,9 +84,9 @@
     "semantic_hash": "9ba555acfabaf3d783501213fb6da11c"
   },
   "custom_components/shutter_pilot/frontend/shutter-pilot-panel.js": {
-    "mtime": 1789399510.6716142,
-    "seen": 1789399733.344424,
-    "ast_hash": "ba0243a82e1948be2f20812fe77d3bad",
+    "mtime": 1791819353.171332,
+    "seen": 1791820175.151384,
+    "ast_hash": "1e70c20af24c196805eb55c63fe78f89",
     "semantic_hash": ""
   },
   "custom_components/shutter_pilot/group_actions.py": {
@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "custom_components/shutter_pilot/manifest.json": {
-    "mtime": 1789894912.9445198,
-    "seen": 1789895753.7396228,
-    "ast_hash": "c0e96fcdf2d2ba1a3f9bfdbd3207910d",
+    "mtime": 1791820148.8948839,
+    "seen": 1791820175.151386,
+    "ast_hash": "9a74752c1992e1ac17c2e79bf3dc5386",
     "semantic_hash": ""
   },
   "custom_components/shutter_pilot/position_store.py": {
@@ -402,9 +402,9 @@
     "semantic_hash": "c17cbc50d406171f3add2e4c5778be36"
   },
   "tests/test_panel.py": {
-    "mtime": 1789399116.9393876,
-    "seen": 1789399733.344467,
-    "ast_hash": "7fd9f15f4ce003f218178acefdb8637c",
+    "mtime": 1791820148.908455,
+    "seen": 1791820175.1514251,
+    "ast_hash": "114689ef9ee03693bd09e2a1bd60db3b",
     "semantic_hash": ""
   },
   "tests/test_pending_persist.py": {
@@ -564,15 +564,15 @@
     "semantic_hash": "b16cc81da386a69584857cc5676819f3"
   },
   "CHANGELOG.md": {
-    "mtime": 1791126079.9711585,
-    "seen": 1791126083.113239,
-    "ast_hash": "b2524ac6f8716118c8c14f7c4a8e5132",
+    "mtime": 1791820148.8966067,
+    "seen": 1791820175.1514502,
+    "ast_hash": "7afdec47f4eba71703dfdd8e15b0661b",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791126079.9678528,
-    "seen": 1791126083.113239,
-    "ast_hash": "6bf4ec2066a23cdcc78f29b7e4c4ec66",
+    "mtime": 1791820148.8896651,
+    "seen": 1791820175.1514502,
+    "ast_hash": "714161d1e0b78a5b718259c3a94e795f",
     "semantic_hash": ""
   },
   "FORUM_POST.md": {
@@ -696,9 +696,9 @@
     "semantic_hash": ""
   },
   "docs/CHANGELOG_DEV.md": {
-    "mtime": 1791126079.9696052,
-    "seen": 1791126083.113245,
-    "ast_hash": "32fced30d62b9a681746e830f07f1492",
+    "mtime": 1791820139.3232133,
+    "seen": 1791820175.151456,
+    "ast_hash": "9e44e71c6d4507623a635c767a50f2da",
     "semantic_hash": ""
   },
   "tests/test_manual_move_clears_pending_drive.py": {

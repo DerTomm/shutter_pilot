@@ -4,6 +4,21 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.23.3]
+
+Eine Forumsmeldung (Linos, community.simon42.com/90112/185): Die Rollläden
+fuhren morgens erst um 07:30 hoch, obwohl die Helligkeit schon seit 07:19
+über der Schwelle lag. Mit seinem Export nachgerechnet – kein Fehler in der
+Logik, aber eine Einstellung, die man leicht falsch versteht.
+
+### Geändert
+- **Hinweis bei den „Zusätzlichen Sonnengrenzen" im Helligkeitsmodus.** Ein
+  leeres Feld bedeutet „keine Grenze", eine **0** dagegen „erst ab
+  Sonnenaufgang bzw. Sonnenuntergang". Das steht jetzt dauerhaft als
+  Untertext unter den Feldern; steht in einem Feld eine 0, erscheint
+  zusätzlich eine Warnung mit dem Ausweg (Feld leeren oder einen Minus-Wert
+  eintragen). In allen elf Sprachen. Das Verhalten selbst ist unverändert.
+
 ## [2.23.2]
 
 Eine Forumsmeldung (Bjoerg, community-smarthome.com/11378/166): Kippen des

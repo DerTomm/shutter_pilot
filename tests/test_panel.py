@@ -146,3 +146,22 @@ def test_the_lists_are_sorted_without_losing_the_index() -> None:
     result = _run("sorting.mjs")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "FAIL" not in result.stdout, result.stdout
+
+
+def test_sun_bound_zero_is_explained_in_the_panel() -> None:
+    """Eine 0 bei den Sonnengrenzen ist eine Grenze, nur leer ist keine (Linos).
+
+    Ohne sichtbaren Hinweis oeffnete ein Haus erst ab Sonnenaufgang, obwohl
+    der Nutzer "keine Grenze" meinte. Der Hinweis muss immer da sein, die
+    Warnung nur bei einer ausdruecklichen 0."""
+    text = (
+        Path(__file__).parent.parent
+        / "custom_components/shutter_pilot/frontend/shutter-pilot-panel.js"
+    ).read_text(encoding="utf-8")
+    assert text.count("f_sunbound_empty:") == 11
+    assert text.count("f_sunbound_zero:") == 11
+    assert 'T("f_sunbound_empty")' in text
+    warn = re.search(r"\.some\(([^\n]*)\)\?html`[^`]*f_sunbound_zero", text)
+    assert warn, "die Warnung bei einer ausdruecklichen 0 fehlt"
+    # leer darf nicht warnen: "" und null muessen vorher ausgeschlossen sein
+    assert '!==""' in warn.group(1) and "!=null" in warn.group(1)
