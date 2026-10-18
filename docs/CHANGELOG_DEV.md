@@ -4,6 +4,71 @@ Vollständiges Fortschritts-Log von Shutter Pilot, ausgelagert aus `CLAUDE.md`, 
 
 Bei Fragen zur Historie: hier nachlesen oder `grep`/`graphify` benutzen, bevor eine Vermutung über eine frühere Entscheidung geäußert wird.
 
+### 2026-09-09 – 2.22.4: der Merker, der die Freigabe nicht bemerkte
+
+Forumsmeldung c.radi (community.simon42.com/90112/144): „Mein Rolladen
+Schlafzimmer links fährt abends nicht herunter." Export mitgeliefert, Wert
+für Wert gegen die echten Helfer nachgerechnet statt geglaubt.
+
+**Der auffällige Widerspruch im Export:** Position „Schlafzimmer Links"
+100 % (offen), Quelle „automation" – aber unter „Laufender Zustand" stand
+genau dieser Rollladen trotzdem in `covers_driven_down` („gilt als unten"),
+`covers_driven_up` war für alle vier Rollläden leer. `scheduled_role_now()`
+dokumentiert diesen Merker ausdrücklich als „nur wo zuletzt hingefahren
+wurde" – ein Rollladen, der von der Automatik selbst nach oben gefahren
+wurde, aber weiter als „unten" gilt, ist genau der Widerspruch, den
+`brightness.py::_run_down()` als „heute schon unten gewesen" liest und
+deshalb überspringt.
+
+**Nachgerechnet, welcher Fahrweg das erzeugen kann.** Jeder reguläre
+Fahrweg pflegt `covers_driven_up`/`covers_driven_down` mit – `_drive_group()`
+(services.py, für `open_group`/`close_group`/…), `brightness.py` und
+`scheduler.py` je für ihre eigene Richtung, `note_manual_position()` für
+eine erkannte Fremdfahrt. Zwei Fahrwege tun das nicht:
+
+1. **`resume_automation()`** (services.py) ruft `set_cover_position()`
+   direkt auf, ohne die beiden Sets anzufassen – anders als `_drive_group()`
+   in derselben Datei. Reproduziert: Rollladen künstlich in
+   `covers_driven_down`, Dienst mit `scheduled_role_now() == "open"`
+   aufgerufen – er fährt korrekt auf 100 %, aber der alte Merker blieb
+   unverändert stehen.
+2. **Die Beschattungsfreigabe** (`elevation.py::_release_sun_protect()`,
+   ausgelöst durch `shade_release_opens`) fährt den Rollladen am Ende des
+   Beschattungszeitraums in seine Ruhestellung (`rest_role()` – bei einem
+   Rollladen `ROLE_OPEN`), räumt dabei bereits den Fenster-Zyklus und eine
+   vorgemerkte Nachhol-Fahrt auf, aber nicht `covers_driven_down`.
+   Reproduziert mit demselben Muster: Merker künstlich gesetzt, Freigabe
+   per Elevationsabfall ausgelöst – Rollladen fährt auf 100 %, der Merker
+   bleibt stehen.
+
+**Warum das zu c.radis Bereich passt, ohne eine bestimmte Diensterei zu
+unterstellen:** sein Bereich „Schlafen" hat `sun_protect_enabled: ja`,
+`shade_release_opens: ja` **und** `we_no_up: ja` (Wochenend-Sperre fürs
+Hochfahren). Die Sperre hält den Rollladen morgens korrekt unten – die
+Beschattung kennt diese Sperre nicht und darf das auch nicht (Beschattung
+und Hochfahr-Sperre sind bewusst getrennte Fragen). Fällt die Elevation am
+Nachmittag unter `elevation_min`, fährt die Freigabe unabhängig von der
+Sperre ganz auf. Ohne den Fix blieb der alte „unten"-Merker von der
+Sperre über die Freigabe hinweg stehen, und die abendliche
+Helligkeitsautomatik überspringt den nun weit offenen Rollladen.
+
+Behoben an beiden Stellen mit derselben zweizeiligen Pflege wie in
+`_drive_group()`: nach der Fahrt in `_release_sun_protect()` und in
+`resume_automation()` `covers_driven_up`/`covers_driven_down` je nach
+Zielrolle setzen bzw. löschen. **Dieselbe Fehlerklasse wie so oft in diesem
+Log** (2.17.0, 2.21.3, 2.22.0 Fund 2, 2.22.2 Fund 2, 2.22.3 Fund 2): ein
+Merker, der eine Handlung überlebt, für die er nicht gedacht war – diesmal
+an zwei Stellen zugleich, weil beide denselben zentralen Vertrag
+(„nach einer Endlagenfahrt stimmt die Richtung") ohne ihn beteiligt zu
+haben, gebrochen haben.
+
+**Verifiziert:** `pytest` 832 Tests grün (3 neue). Für beide Funde je eine
+echte Gegenprobe – Fix testweise entschärft, genau die zugehörigen neuen
+Tests fielen (`tests/test_resume_automation.py`, zwei neue Tests;
+`tests/test_area_mode_none.py`, ein neuer Test), alle anderen 8xx blieben
+grün, danach Fix wiederhergestellt und volle Suite erneut grün. **Nicht im
+Browser geprüft** – reine Backend-Logik, keine Panel-Änderung.
+
 ### 2026-09-08 – 2.22.3: der Merker, der die Hand nicht bemerkte
 
 Zwei Forumsmeldungen vom selben Tag (community-smarthome.com/11378), beide

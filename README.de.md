@@ -2,7 +2,7 @@
 
 > **Automatische Rollladen-/Jalousiensteuerung für Home Assistant**
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/v/release/fschubi/shutter_pilot)](https://github.com/fschubi/shutter_pilot/releases)
 [![Lizenz](https://img.shields.io/github/license/fschubi/shutter_pilot)](LICENSE)
 [![PayPal](https://img.shields.io/badge/Spenden-PayPal-00457C?logo=paypal&logoColor=white)](https://paypal.me/fschubi)
@@ -15,7 +15,7 @@ Shutter Pilot ist eine Home Assistant Custom Integration, die Rollläden, Jalous
 
 ## Funktionen
 
-- **Drei Steuerungsmodi** pro Bereich: Zeitbasiert, helligkeitsbasiert (Lux-Sensor) oder Sonnenstand (Sonnenauf-/untergang)
+- **Vier Steuerungsmodi** pro Bereich: zeitbasiert, helligkeitsbasiert (Lux-Sensor), Sonnenstand (Sonnenauf-/-untergang) – oder ganz ohne Zeitplan, nur zum Beschatten
 - **Sidebar-Panel** mit Dashboard, Bereiche, Rollläden, Markisen und Dachfenster-Tabs zur vollständigen Verwaltung
 - **Fenster-/Türsensoren** – öffnet Rollläden automatisch bei geöffnetem Fenster
 - **Aussperrschutz** – verhindert vollständiges Schließen bei offener Tür
@@ -33,6 +33,13 @@ Shutter Pilot ist eine Home Assistant Custom Integration, die Rollläden, Jalous
 - **Sonnenstand-Info im Dashboard** – zeigt nächsten Sonnenaufgang/-untergang, Offset und berechnete Trigger-Zeit für Sonnenstand-Bereiche
 - **Markisen** – eigener Tab, Beschattung ohne Zeitplan, mit **Wind-, Regen- und Frostschutz** (gilt auch bei ausgeschalteter Automatik) und optionaler Ausfahrlänge nach Sonnenhöhe
 - **Dachfenster** – eigener Tab, Öffnen nach Bedingungen (z. B. Innentemperatur), **Regen-, Wind- und Frostschutz** schließt sie wieder
+- **Bis zu vier Beschattungsbedingungen** – Binärsensor, Zahlenwert mit Hysterese oder Textzustand (Wetterlage), je Bereich und je Rollladen überschreibbar
+- **Wettervorhersage** – eigene Sensoren für Tageshöchst-, Tiefsttemperatur und Wetterlage aus deiner `weather.*`-Entität, direkt als Bedingung nutzbar
+- **Teilweise schließen, Frostschutz und automatisches Lüften** – jeweils mit eigener Bedingung je Bereich
+- **Handfahrten werden respektiert** – drei Modi, wie lange eine von Hand gesetzte Position die Automatik fernhält
+- **Fahrtkontrolle** – prüft nach jeder automatischen Fahrt, ob die Position erreicht wurde, und wiederholt sonst den Befehl
+- **Positionen überstehen den Neustart** – beim Start korrigiert, wenn die Cover-Integration falsch wiederhergestellt hat
+- **Export der Einstellungen** – ein Bericht mit allen Einstellungen und der aktuellen Entscheidung je Rollladen, für Fehlerberichte
 
 ## Screenshots
 
@@ -60,11 +67,19 @@ Klicke auf ein Bild, um es auf GitHub in **voller Auflösung** zu öffnen (hier 
 
 ### HACS (Empfohlen)
 
+Seit dem 18. Oktober 2026 ist Shutter Pilot im **offiziellen HACS-Store**
+aufgenommen – ein benutzerdefiniertes Repository muss nicht mehr eingetragen
+werden.
+
 1. Öffne HACS in Home Assistant
-2. Klicke auf das Drei-Punkte-Menü (oben rechts) → **Benutzerdefinierte Repositories**
-3. Füge `https://github.com/fschubi/shutter_pilot` als **Integration** hinzu
-4. Suche nach "Shutter Pilot" und installiere
-5. Starte Home Assistant neu
+2. Suche nach **Shutter Pilot**
+3. Öffnen und auf **Herunterladen** klicken
+4. Starte Home Assistant neu
+
+[![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=fschubi&repository=shutter_pilot&category=integration)
+
+> **Schon über ein benutzerdefiniertes Repository installiert?** Dann ist
+> nichts zu tun – Updates kommen wie bisher.
 
 ### Manuell
 
@@ -97,7 +112,8 @@ Klicke auf **"Bereich hinzufügen"** um einen neuen Bereich zu erstellen. Wähle
 
 Jeder Bereich kann zusätzlich haben:
 - **Sonnenschutz** – fährt Rollläden auf eine Mittelposition, wenn die Sonne im eingestellten Höhenwinkel-Bereich **und** vor den Fenstern steht
-- **Zusatzbedingungen für den Sonnenschutz** – bis zu zwei Sensoren, die zusätzlich erfüllt sein müssen (siehe unten)
+- **Zusatzbedingungen für den Sonnenschutz** – bis zu vier Sensoren, die zusätzlich erfüllt sein müssen (siehe unten)
+- **Manuelle Position** – wie lange eine von Hand gesetzte Position das automatische Hochfahren verhindert (siehe unten)
 - **Licht-Aktion** – schaltet ein Licht/Schalter ein wenn Rollläden schließen
 - **Fahrverzögerung** – Sekunden zwischen einzelnen Rollläden (verhindert Sicherungsüberlastung)
 
@@ -191,6 +207,34 @@ Der Haken **Automatik aktiv** im Rollladenformular legt den Startwert fest. Ein 
 
 Wichtig: Abgeschaltet ist nur die **Automatik**. Von Hand fährt der Rollladen weiter – über die Knöpfe im Dashboard, die Dienste `open_group`/`close_group` und ganz normal über die Cover-Entität. Sonst könnte man ihn nach der Reparatur nicht einmal prüfen.
 
+## Von Hand gefahrene Positionen
+
+Shutter Pilot unterscheidet die eigenen Fahrten von allen anderen – Wandschalter,
+Fernbedienung, die Cover-Entität auf einem Dashboard. Ein Rollladen, den jemand
+von Hand auf halbe Höhe gestellt hat, wird von der nächsten automatischen
+Hochfahrt nicht geöffnet. Wie lange das gilt, steht je Bereich unter
+**Manuelle Position**:
+
+| Einstellung | Wirkung |
+|-------------|---------|
+| **Bis zur nächsten Schließfahrt** (Vorgabe) | die Handposition gilt, bis der Bereich abends wieder schließt |
+| **Nur am selben Tag** | am nächsten Morgen übernimmt die Automatik wieder |
+| **Automatik hat Vorrang** | die nächste geplante Fahrt bewegt den Rollladen wie gewohnt |
+
+Es zählen nur **Zwischenpositionen**. Ein von Hand geschlossener Rollladen ist
+einfach zu – genau das, was die Automatik auch getan hätte – und öffnet morgens
+wie gewohnt. Wer Rollläden sofort zurückgeben will, ruft
+`shutter_pilot.resume_automation` auf.
+
+## Nach einem Neustart
+
+Jede Position wird gespeichert, zusammen damit, ob die Automatik oder jemand
+anderes sie angefahren hat. Manche Cover-Integrationen stellen nach einem
+Neustart von Home Assistant den falschen Zustand wieder her; weicht die
+gemeldete Position um mehr als 8 % von der gespeicherten ab, fährt Shutter Pilot
+auf die gespeicherte zurück. Eine vorgemerkte Nachholfahrt übersteht den
+Neustart ebenfalls (siehe Rollladen-Einstellungen oben).
+
 ## Event
 
 Bei jeder automatischen Fahrt wird `shutter_pilot_cover_moved` auf dem Event-Bus gefeuert – ideal für eigene Benachrichtigungen:
@@ -214,7 +258,9 @@ Enthaltene Felder: `entity_id`, `position`, `tilt_position`, `reason`, `area_id`
 
 ## Fehlersuche
 
-Bei Problemen hilft der Diagnose-Download: **Einstellungen → Geräte & Dienste → Shutter Pilot → ⋮ → Diagnoseinformationen herunterladen**. Die Datei enthält Konfiguration, Laufzeitstatus und Sonnendaten – Standortkoordinaten werden geschwärzt.
+Für Fehlerberichte ist der schnellste Weg der **Export der Einstellungen** im Tab **Einstellungen** des Panels: ein Bericht mit allen Einstellungen, den aktuellen Sensorwerten und der Beschattungs-Entscheidung von genau jetzt – je Rollladen mit Begründung. Kopieren oder herunterladen und an den Forumsbeitrag oder das Issue hängen. Enthalten sind nur Shutter Pilots eigene Einstellungen und die Namen der von dir gewählten Entitäten, keine Zugangsdaten und kein Standort.
+
+Der Diagnose-Download geht ebenfalls: **Einstellungen → Geräte & Dienste → Shutter Pilot → ⋮ → Diagnoseinformationen herunterladen**. Die Datei enthält Konfiguration, Laufzeitstatus und Sonnendaten – Standortkoordinaten werden geschwärzt.
 
 ## Unterstützte Sprachen
 

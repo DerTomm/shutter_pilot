@@ -2,7 +2,7 @@
 
 > **Automatic shutter/blind control for Home Assistant**
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/v/release/fschubi/shutter_pilot)](https://github.com/fschubi/shutter_pilot/releases)
 [![License](https://img.shields.io/github/license/fschubi/shutter_pilot)](LICENSE)
 [![PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?logo=paypal&logoColor=white)](https://paypal.me/fschubi)
@@ -15,7 +15,7 @@ Shutter Pilot is a Home Assistant custom integration that automates your shutter
 
 ## Features
 
-- **Three control modes** per area: Time-based, brightness-based (lux sensor), or sun position (sunrise/sunset)
+- **Four control modes** per area: time-based, brightness-based (lux sensor), sun position (sunrise/sunset) – or no schedule at all, for shading only
 - **Sidebar panel** with Dashboard, Areas, Shutters, Awnings and Roof windows tabs for full management
 - **Window/door sensors** – automatically opens shutters when windows are opened
 - **Lock protection** – prevents full closing when a door is open
@@ -33,6 +33,13 @@ Shutter Pilot is a Home Assistant custom integration that automates your shutter
 - **Sun info on dashboard** – shows next sunrise/sunset, configured offsets, and calculated trigger times for sun-mode areas
 - **Awnings** – their own tab, shading without any schedule, with **wind, rain and frost protection** (applies even with automation switched off) and optional sun tracking of the extension
 - **Roof windows** – their own tab, opening by conditions (indoor temperature, for instance), with **rain, wind and frost protection** shutting them again
+- **Up to four shading conditions** – binary sensor, numeric value with hysteresis or text state (weather condition), per area and overridable per shutter
+- **Weather forecast** – its own daily high, low and condition sensors from your `weather.*` entity, usable directly as conditions
+- **Partial closing, frost protection and automatic ventilation** – each with its own condition per area
+- **Manual positions are respected** – three modes for how long a position set by hand keeps the automation away
+- **Drive verification** – checks after each automated drive whether the position was reached, and repeats the command if not
+- **Positions survive a restart** – corrected on startup if the cover integration restored the wrong state
+- **Settings export** – one report with every setting and the current decision per shutter, for bug reports
 
 ## Screenshots
 
@@ -60,11 +67,18 @@ Click an image to open it **full size** on GitHub (thumbnails are scaled down in
 
 ### HACS (Recommended)
 
+Since 18 October 2026 Shutter Pilot is part of the **official HACS default
+store** – adding a custom repository is no longer needed.
+
 1. Open HACS in Home Assistant
-2. Click the three dots menu (top right) → **Custom repositories**
-3. Add `https://github.com/fschubi/shutter_pilot` as **Integration**
-4. Search for "Shutter Pilot" and install
-5. Restart Home Assistant
+2. Search for **Shutter Pilot**
+3. Open it and click **Download**
+4. Restart Home Assistant
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=fschubi&repository=shutter_pilot&category=integration)
+
+> **Already installed through a custom repository?** Nothing to do – updates
+> keep arriving as before.
 
 ### Manual
 
@@ -97,7 +111,8 @@ Click **"Add area"** to create a new area. Choose a control mode:
 
 Each area can also have:
 - **Sun protection** – drives shutters to a mid-position when the sun is within the elevation range **and** facing the windows
-- **Extra shading conditions** – up to two sensors that must also be satisfied (see below)
+- **Extra shading conditions** – up to four sensors that must also be satisfied (see below)
+- **Manual position** – how long a position set by hand keeps the automation from opening (see below)
 - **Light action** – turns on a light/switch entity when shutters close
 - **Drive delay** – seconds between individual shutters (prevents circuit overload)
 
@@ -189,6 +204,32 @@ The **Automation active** checkbox in the shutter form sets the initial value. A
 
 Note that only **automation** is switched off. Manual control keeps working – the dashboard buttons, the `open_group`/`close_group` services and the cover entity itself. Otherwise you could not even test the shutter after repairing it.
 
+## Manual positions
+
+Shutter Pilot tells its own drives apart from everyone else's – the wall
+switch, the remote, the cover entity on a dashboard. A shutter somebody parks
+half way by hand is not opened by the next automated up drive. How long that
+lasts is set per area under **Manual position**:
+
+| Setting | Effect |
+|---------|--------|
+| **Until the next closing run** (default) | the hand-set position holds until the area closes again in the evening |
+| **Only on the same day** | the next morning the automation takes over again |
+| **Automation always wins** | the next scheduled drive moves the shutter as usual |
+
+Only **intermediate** positions count. A shutter closed by hand is simply
+closed – exactly what the automation would have done – and opens in the
+morning as usual. To hand shutters back right away, call
+`shutter_pilot.resume_automation`.
+
+## After a restart
+
+Every position is stored, along with whether the automation or somebody else
+drove there. Some cover integrations restore the wrong state after a Home
+Assistant restart; if the reported position is more than 8 % off the stored
+one, Shutter Pilot drives back to the stored position. A pending drive after
+close survives the restart too (see the shutter settings above).
+
 ## Event
 
 Every automated movement fires `shutter_pilot_cover_moved` on the event bus:
@@ -212,7 +253,9 @@ Fields: `entity_id`, `position`, `tilt_position`, `reason`, `area_id`, `source`.
 
 ## Troubleshooting
 
-For bug reports, download diagnostics: **Settings → Devices & Services → Shutter Pilot → ⋮ → Download diagnostics**. The file contains configuration, runtime state and sun data; home coordinates are redacted.
+For bug reports, the quickest route is the **settings export** in the panel's **Settings** tab: one report with every setting, the current sensor readings and the shading decision of this very moment – per shutter, with its reasoning. Copy it or download it and attach it to the forum post or issue. It contains only Shutter Pilot's own settings and the names of the entities you picked: no credentials, no location.
+
+Diagnostics work as well: **Settings → Devices & Services → Shutter Pilot → ⋮ → Download diagnostics**. The file contains configuration, runtime state and sun data; home coordinates are redacted.
 
 ## Supported Languages
 

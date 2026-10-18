@@ -4,6 +4,29 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.23.4]
+
+Shutter Pilot ist seit dem 18. Oktober 2026 im **offiziellen HACS-Store**
+(hacs/default#9592). Aus dem Review dazu kam ein Hinweis auf einen echten
+Fehler, der hier behoben ist.
+
+### Behoben
+- **„Konfigurieren"-Dialog auf Home Assistant 2024.6 bis 2024.10.** Der
+  Optionsdialog las `self.config_entry`, das Home Assistant erst ab 2024.11
+  selbst setzt – auf älteren Versionen brach der Dialog mit einem Fehler ab.
+  Der Eintrag wird jetzt beim Anlegen übergeben; die Mindestversion 2024.6.0
+  bleibt. Das Panel war davon nie betroffen.
+
+### Dokumentation
+- **Installation über HACS ohne benutzerdefiniertes Repository**, in beiden
+  README-Sprachen und im Forumstext. Wer schon über ein benutzerdefiniertes
+  Repository installiert hat, muss nichts tun.
+- **README mit dem Funktionsumfang abgeglichen** (beide Sprachen): vier statt
+  drei Modi, bis zu vier statt zwei Beschattungsbedingungen, neue Abschnitte
+  zu von Hand gefahrenen Positionen (die drei Übersteuerungsmodi) und zum
+  Verhalten nach einem Neustart, der Export der Einstellungen unter
+  Fehlersuche, und eine längere Funktionsliste oben.
+
 ## [2.23.3]
 
 Eine Forumsmeldung (Linos, community.simon42.com/90112/185): Die Rollläden

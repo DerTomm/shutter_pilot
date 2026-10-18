@@ -186,18 +186,27 @@ class ShutterPilotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> ShutterPilotOptionsFlow:
         """Return the options flow handler."""
-        return ShutterPilotOptionsFlow()
+        return ShutterPilotOptionsFlow(config_entry)
 
 
 class ShutterPilotOptionsFlow(config_entries.OptionsFlow):
     """Minimal options flow – configuration lives in the sidebar panel."""
 
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Keep the entry ourselves.
+
+        Home Assistant only sets ``self.config_entry`` from 2024.11 on, and
+        assigning it ourselves is deprecated there – a private name works on
+        every version down to the declared minimum (hacs.json).
+        """
+        self._entry = config_entry
+
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         """Point the user to the panel and keep options untouched."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=dict(self.config_entry.options))
+            return self.async_create_entry(title="", data=dict(self._entry.options))
 
-        options = self.config_entry.options or {}
+        options = self._entry.options or {}
         areas = options.get(CONF_AREAS, [])
         shutters = options.get(CONF_SHUTTERS, [])
 

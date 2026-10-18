@@ -48,7 +48,7 @@ custom_components/shutter_pilot/
   switch/sensor/binary_sensor.py   Entitäten
   services.py        Dienste (Gruppenaktionen)
   frontend/shutter-pilot-panel.js  Das komplette Panel (~4800 Z., ein File)
-tests/               pytest-Suite (856 Tests)
+tests/               pytest-Suite (858 Tests)
 tests/panel/         Panel in Node rendern – laeuft in der CI mit
 ```
 
@@ -280,7 +280,7 @@ Befehl dazu: **nicht vergessen**.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements-test.txt
-.venv/bin/pytest            # 856 Tests, ~21 s
+.venv/bin/pytest            # 858 Tests, ~21 s
 ```
 
 `.venv/` ist in `.gitignore`. In `pytest.ini` steht `-q` schon in `addopts` –
@@ -309,12 +309,38 @@ mich"), nicht als Commit-Log.
 
 ## Projektstand
 
-Version **2.23.3**, im Forum aktiv genutzt. Einreichung für den
-HACS-Default-Store läuft: PR [hacs/default#9592](https://github.com/hacs/default/pull/9592).
+Version **2.23.4**, im Forum aktiv genutzt. Seit 18.10.2026 im
+**HACS-Default-Store** (PR [hacs/default#9592](https://github.com/hacs/default/pull/9592), von frenck gemergt).
 
 ## Fortschritts-Log
 
 Vollständige Historie (ältere Einträge) steht in `docs/CHANGELOG_DEV.md` – hier nur die letzten fünf, damit diese Datei nicht wieder über das Kontextlimit wächst. Neuer Eintrag kommt hier dazu; wird die Liste hier zu lang, wandert der älteste nach `docs/CHANGELOG_DEV.md`.
+
+### 2026-10-18 – 2.23.4: im offiziellen HACS-Store
+
+frenck hat hacs/default#9592 freigegeben und gemergt. Seine Begründung für
+die Freigabe: die schreibenden WebSocket-Befehle sind admin-only, das Panel
+für Nicht-Admins offen zu lassen ist in Ordnung (die Grenze liegt auf dem
+Server).
+
+**Sein Hinweis, nachgeprüft und behoben:** `ShutterPilotOptionsFlow` las
+`self.config_entry`, das HA erst ab 2024.11 selbst setzt – `hacs.json` sagt
+2024.6.0. Jetzt wird der Eintrag im Konstruktor übergeben und als
+`self._entry` gehalten. **Nicht** `self.config_entry` zuweisen: ab 2024.11
+veraltet, später ein Fehler. Neuer Test `tests/test_options_flow.py` (2):
+einmal über `hass.config_entries.options`, einmal ohne gebundenen Handler –
+der simuliert < 2024.11. Gegenprobe mit altem Code: genau der zweite fällt.
+
+**README (beide Sprachen) und FORUM_POST.md:** Installation ohne
+benutzerdefiniertes Repository, Badge HACS-Default, My-HA-Link. Abgleich mit
+dem Funktionsumfang: „drei Modi" und „bis zu zwei Bedingungen" waren
+veraltet; neu sind Abschnitte zur manuellen Übersteuerung (nur
+Zwischenpositionen, nur das Hochfahren – `should_skip_automated_up`), zum
+Neustart (Abweichung > 8 % → zurückfahren, `POSITION_TOLERANCE_PCT`) und
+zum Export unter Fehlersuche.
+
+**Verifiziert:** `pytest` 858 grün. Nicht in einer HA < 2024.11 geprüft –
+nur über den Test ohne Handler.
 
 ### 2026-10-12 – 2.23.3: die 0, die keine leere Grenze ist
 
@@ -553,71 +579,6 @@ Fund eine echte Gegenprobe: Fix entschärft → genau die zugehörigen Tests
 fielen (Fund 1: 2, Nebenbefund: 1, Fund 2: 1, Fund 4: 4), Rest grün, Fix
 wiederhergestellt, volle Suite grün. **Fund 3 im Browser geprüft** (in-App-
 Browser, 375 px, CSS des Panels 1:1 extrahiert). Panel in Node gerendert.
-
-### 2026-09-09 – 2.22.4: der Merker, der die Freigabe nicht bemerkte
-
-Forumsmeldung c.radi (community.simon42.com/90112/144): „Mein Rolladen
-Schlafzimmer links fährt abends nicht herunter." Export mitgeliefert, Wert
-für Wert gegen die echten Helfer nachgerechnet statt geglaubt.
-
-**Der auffällige Widerspruch im Export:** Position „Schlafzimmer Links"
-100 % (offen), Quelle „automation" – aber unter „Laufender Zustand" stand
-genau dieser Rollladen trotzdem in `covers_driven_down` („gilt als unten"),
-`covers_driven_up` war für alle vier Rollläden leer. `scheduled_role_now()`
-dokumentiert diesen Merker ausdrücklich als „nur wo zuletzt hingefahren
-wurde" – ein Rollladen, der von der Automatik selbst nach oben gefahren
-wurde, aber weiter als „unten" gilt, ist genau der Widerspruch, den
-`brightness.py::_run_down()` als „heute schon unten gewesen" liest und
-deshalb überspringt.
-
-**Nachgerechnet, welcher Fahrweg das erzeugen kann.** Jeder reguläre
-Fahrweg pflegt `covers_driven_up`/`covers_driven_down` mit – `_drive_group()`
-(services.py, für `open_group`/`close_group`/…), `brightness.py` und
-`scheduler.py` je für ihre eigene Richtung, `note_manual_position()` für
-eine erkannte Fremdfahrt. Zwei Fahrwege tun das nicht:
-
-1. **`resume_automation()`** (services.py) ruft `set_cover_position()`
-   direkt auf, ohne die beiden Sets anzufassen – anders als `_drive_group()`
-   in derselben Datei. Reproduziert: Rollladen künstlich in
-   `covers_driven_down`, Dienst mit `scheduled_role_now() == "open"`
-   aufgerufen – er fährt korrekt auf 100 %, aber der alte Merker blieb
-   unverändert stehen.
-2. **Die Beschattungsfreigabe** (`elevation.py::_release_sun_protect()`,
-   ausgelöst durch `shade_release_opens`) fährt den Rollladen am Ende des
-   Beschattungszeitraums in seine Ruhestellung (`rest_role()` – bei einem
-   Rollladen `ROLE_OPEN`), räumt dabei bereits den Fenster-Zyklus und eine
-   vorgemerkte Nachhol-Fahrt auf, aber nicht `covers_driven_down`.
-   Reproduziert mit demselben Muster: Merker künstlich gesetzt, Freigabe
-   per Elevationsabfall ausgelöst – Rollladen fährt auf 100 %, der Merker
-   bleibt stehen.
-
-**Warum das zu c.radis Bereich passt, ohne eine bestimmte Diensterei zu
-unterstellen:** sein Bereich „Schlafen" hat `sun_protect_enabled: ja`,
-`shade_release_opens: ja` **und** `we_no_up: ja` (Wochenend-Sperre fürs
-Hochfahren). Die Sperre hält den Rollladen morgens korrekt unten – die
-Beschattung kennt diese Sperre nicht und darf das auch nicht (Beschattung
-und Hochfahr-Sperre sind bewusst getrennte Fragen). Fällt die Elevation am
-Nachmittag unter `elevation_min`, fährt die Freigabe unabhängig von der
-Sperre ganz auf. Ohne den Fix blieb der alte „unten"-Merker von der
-Sperre über die Freigabe hinweg stehen, und die abendliche
-Helligkeitsautomatik überspringt den nun weit offenen Rollladen.
-
-Behoben an beiden Stellen mit derselben zweizeiligen Pflege wie in
-`_drive_group()`: nach der Fahrt in `_release_sun_protect()` und in
-`resume_automation()` `covers_driven_up`/`covers_driven_down` je nach
-Zielrolle setzen bzw. löschen. **Dieselbe Fehlerklasse wie so oft in diesem
-Log** (2.17.0, 2.21.3, 2.22.0 Fund 2, 2.22.2 Fund 2, 2.22.3 Fund 2): ein
-Merker, der eine Handlung überlebt, für die er nicht gedacht war – diesmal
-an zwei Stellen zugleich, weil beide denselben zentralen Vertrag
-(„nach einer Endlagenfahrt stimmt die Richtung") ohne ihn beteiligt zu
-haben, gebrochen haben.
-
-**Verifiziert:** `pytest` 832 Tests grün (3 neue). Für beide Funde je eine
-echte Gegenprobe – Fix testweise entschärft, genau die zugehörigen neuen
-Tests fielen (`tests/test_resume_automation.py`, zwei neue Tests;
-`tests/test_area_mode_none.py`, ein neuer Test), alle anderen 8xx blieben
-grün, danach Fix wiederhergestellt und volle Suite erneut grün. **Nicht im
-Browser geprüft** – reine Backend-Logik, keine Panel-Änderung.
 
 ## graphify
 

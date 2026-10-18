@@ -88,12 +88,13 @@ Alles wird direkt gespeichert, ein Neustart von Home Assistant ist dafür nicht 
 
 **Über HACS (empfohlen):**
 
+Shutter Pilot ist seit dem 18. Oktober 2026 im offiziellen HACS-Store – kein
+benutzerdefiniertes Repository mehr nötig.
+
 1. HACS öffnen
-2. Oben rechts das Drei-Punkte-Menü → **Benutzerdefinierte Repositories**
-3. Diese Adresse als Kategorie **Integration** hinzufügen:
-   https://github.com/fschubi/shutter_pilot
-4. Nach „Shutter Pilot" suchen und installieren
-5. Home Assistant neu starten
+2. Nach „Shutter Pilot" suchen
+3. Öffnen und **Herunterladen**
+4. Home Assistant neu starten
 
 **Manuell:**
 
@@ -161,7 +162,7 @@ Dazu:
 - Positionen bleiben nach Neustart erhalten, manuelle Bedienung wird respektiert
 - Panel in 11 Sprachen, läuft komplett lokal
 
-**Installation:** HACS → Benutzerdefinierte Repositories → die Adresse unten als *Integration* hinzufügen → installieren → neu starten → unter Geräte & Dienste hinzufügen.
+**Installation:** jetzt direkt aus dem offiziellen HACS-Store → nach „Shutter Pilot" suchen → herunterladen → neu starten → unter Geräte & Dienste hinzufügen.
 https://github.com/fschubi/shutter_pilot
 
 Benötigt Home Assistant 2024.6.0+. Feedback und Ideen sehr willkommen!
