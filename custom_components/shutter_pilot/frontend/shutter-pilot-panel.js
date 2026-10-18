@@ -4798,11 +4798,11 @@ class ShutterPilotPanel extends PanelBase {
           const autoOff=this._shutterAutoOff(s);
           return html`<div class="srow ${autoOff?"auto-off":""}"><span class="nm-wrap">${this._dashShutterRole(s,id)}<span class="nm">${s.name||st?.attributes?.friendly_name||s.cover_entity_id}</span>${autoOff?html`<ha-icon class="auto-off-ic" icon="mdi:robot-off-outline" title="${this.t("dash_shutter_auto_off")}"></ha-icon>`:""}</span><span class="srow-right">${this._shutterAutoSwitch(s)}<span class="pos">${p!=null?Math.round(p)+"%":"–"}</span>${this._rowButtons(s)}</span></div>`;})}</div>
       <div class="actions">
-        <button class="btn open" @click=${()=>this._coverAction(sh,"open",true)}><ha-icon icon="mdi:arrow-up-bold"></ha-icon>${this.t("btn_up")}</button>
-        <button class="btn stop" @click=${()=>this._coverAction(sh,"stop",true)}><ha-icon icon="mdi:stop"></ha-icon>${this.t("btn_stop")}</button>
-        <button class="btn close" @click=${()=>this._coverAction(sh,"close",true)}><ha-icon icon="mdi:arrow-down-bold"></ha-icon>${this.t("btn_down")}</button>
-        <button class="btn sun" @click=${()=>this._coverAction(sh,"sun",true)}><ha-icon icon="mdi:sun-wireless-outline"></ha-icon>${this.t("btn_sun")}</button>
-        <button class="btn vent" @click=${()=>this._coverAction(sh,"vent",true)}><ha-icon icon="mdi:air-filter"></ha-icon>${this.t("btn_vent")}</button>
+        <button class="btn open" @click=${()=>this._coverAction(sh,"open",true,id)}><ha-icon icon="mdi:arrow-up-bold"></ha-icon>${this.t("btn_up")}</button>
+        <button class="btn stop" @click=${()=>this._coverAction(sh,"stop",true,id)}><ha-icon icon="mdi:stop"></ha-icon>${this.t("btn_stop")}</button>
+        <button class="btn close" @click=${()=>this._coverAction(sh,"close",true,id)}><ha-icon icon="mdi:arrow-down-bold"></ha-icon>${this.t("btn_down")}</button>
+        <button class="btn sun" @click=${()=>this._coverAction(sh,"sun",true,id)}><ha-icon icon="mdi:sun-wireless-outline"></ha-icon>${this.t("btn_sun")}</button>
+        <button class="btn vent" @click=${()=>this._coverAction(sh,"vent",true,id)}><ha-icon icon="mdi:air-filter"></ha-icon>${this.t("btn_vent")}</button>
       </div></div>`;
   }
   /* Reine Anzeige. Der Wert kommt direkt aus Home Assistant und entscheidet
@@ -5982,24 +5982,57 @@ class ShutterPilotPanel extends PanelBase {
     const min=Number(s.min_position_when_open??20);
     return Number.isFinite(min)&&pos<min?min:pos;
   }
-  async _coverAction(shutters,action,group=false){
+  _areaDriveDelay(area){
+    // Wie const.py/DEFAULT_AREA_DRIVE_DELAY und int() im Backend:
+    // fehlend/ungueltig = 10, eine ausdrueckliche 0 bleibt dagegen 0.
+    const raw=area.drive_delay;
+    const value=typeof raw==="string"
+      ?(/^[+-]?\d+$/.test(raw.trim())?Number(raw):NaN)
+      :typeof raw==="number"||typeof raw==="boolean"?Number(raw):NaN;
+    return Number.isFinite(value)?Math.max(0,Math.trunc(value)):10;
+  }
+  _cancelCoverPlans(covers){
+    // Bereich und Einzelzeile treffen ihre Cover auch in anders gestarteten
+    // Gruppenfahrten. null bedeutet global, nicht nur die aktuelle Auswahl.
+    for(const plan of this._coverPlans||[]){
+      const pending=plan.pending.filter(item=>covers&&!covers.has(item.s.cover_entity_id));
+      if(pending.length===plan.pending.length)continue;
+      plan.pending=pending;
+      plan.wake?.();
+    }
+  }
+  async _coverAction(shutters,action,group=false,areaId=null){
     let list=(shutters||[]).filter(s=>s?.cover_entity_id);
+    if(action==="stop"){
+      // Sofort verwerfen, bevor Stopps gestaffelt werden oder ein
+      // Dienstaufruf fehlschlaegt. Bereits gesendete Befehle sind nicht
+      // rueckholbar; dafuer folgen die stop_cover-Aufrufe.
+      this._cancelCoverPlans(group&&areaId===null?null:new Set(list.map(s=>s.cover_entity_id)));
+    }
     /* Bei den Gruppenknoepfen eines Bereichs haengen Rollläden und Markisen
        zusammen. Zwei Aktionen bedeuten fuer eine Markise etwas anderes oder
        nichts: "Lueften" hat sie nicht, und "auf"/"Sonnenschutz" faehrt sie
        aus – das darf bei aktiver Sperre nicht passieren. "zu" und "Stop"
        bleiben immer erlaubt, das sind die sicheren Richtungen. */
-    if(action==="vent")list=list.filter(s=>!hasGuard(s));
-    if(action==="open"||action==="sun")
-      list=list.filter(s=>!hasGuard(s)||!this._isAwningBarred(s));
-    /* Ein Gruppenknopf ist der Bereich, der handelt – der Rollladenschalter
-       gilt also. Ein defekter Rollladen, den jemand bewusst herausgenommen
+    /* Bei Gruppenfahrten gilt der Rollladenschalter, nicht aber beim Stopp.
+       Ein defekter Rollladen, den jemand bewusst herausgenommen
        hat, fuhr trotzdem mit; zweimal als Fehler gemeldet. Die Knoepfe in der
        Zeile fahren ihn weiterhin: genau damit prueft man ihn nach der
        Reparatur, und deshalb steht die Pruefung nicht in set_cover_position(). */
+    const allowed=s=>{
+      if(action==="stop")return true;
+      if(action==="vent"&&hasGuard(s))return false;
+      if((action==="open"||action==="sun")&&hasGuard(s)&&this._isAwningBarred(s))return false;
+      if(group&&this._shutterAutoOff(s))return false;
+      return !group||action!=="sun"||s.shading_enabled!==false;
+    };
+    list=list.filter(allowed);
     if(group){
-      list=list.filter(s=>!this._shutterAutoOff(s));
-      if(action==="sun")list=list.filter(s=>s.shading_enabled!==false);
+      const seen=new Set();
+      list=list.filter(s=>{
+        if(seen.has(s.cover_entity_id))return false;
+        seen.add(s.cover_entity_id);return true;
+      });
     }
     if(!list.length)return;
     const gap=Math.max(0,Number(this._data?.settings?.min_drive_gap)||0);
@@ -6020,10 +6053,66 @@ class ShutterPilotPanel extends PanelBase {
       const pos=this._lockClamp(s,Number(raw));
       return this.hass.callService("cover","set_cover_position",{entity_id:eid,position:pos});
     };
-    if(!gap){await Promise.all(list.map(call));return;}
-    for(let i=0;i<list.length;i++){
-      if(i)await new Promise(r=>setTimeout(r,gap*1000));
-      await call(list[i]);
+    // Stopp darf nicht hinter einer Bereichsfrist warten. Einzelbedienung
+    // bleibt ebenfalls beim bisherigen Abstand, unabhaengig vom Bereich.
+    if(!group||action==="stop"){
+      if(!gap){await Promise.all(list.map(call));return;}
+      for(let i=0;i<list.length;i++){
+        if(i)await new Promise(r=>setTimeout(r,gap*1000));
+        await call(list[i]);
+      }
+      return;
+    }
+    const areas=new Map((this._data?.areas||[]).filter(a=>a?.id).map(a=>[a.id,a]));
+    const pending=list.map(s=>{
+      const id=areaId??s[action==="open"?"area_up_id":"area_down_id"];
+      const area=areas.get(id);
+      return {s,id:area?id:null,delay:area?this._areaDriveDelay(area)*1000:0};
+    });
+    if(!gap&&pending.every(item=>!item.delay)){
+      await Promise.all(list.map(call));return;
+    }
+    // Nur dieser Klick wird geplant, keine gemeinsame Warteschlange fuer
+    // weitere Klicks oder Browser. Eine Bereichsfrist darf andere bereite
+    // Bereiche nicht aufhalten; beide Fristen rechnen verstrichene Zeit an.
+    const current=s=>this._data?.shutters?.find(x=>x?.cover_entity_id===s.cover_entity_id)||s;
+    const lastArea=new Map();
+    let lastGlobal=-Infinity;
+    const plans=this._coverPlans??(this._coverPlans=new Set());
+    const plan={pending,wake:null};
+    plans.add(plan);
+    try{
+      while(plan.pending.length){
+        // Nach bis zu 120 s Wartezeit koennen Automatik oder Wetterschutz
+        // inzwischen sperren. Gesendete Befehle verbrauchen den Abstand,
+        // uebersprungene nicht. Ein Stopp entfernt Ziele aus plan.pending.
+        plan.pending=plan.pending.filter(item=>allowed(current(item.s)));
+        if(!plan.pending.length)break;
+        let next=0, due=Infinity;
+        plan.pending.forEach((item,i)=>{
+          const at=Math.max(lastGlobal+gap*1000,(lastArea.get(item.id)??-Infinity)+item.delay);
+          if(at<due){next=i;due=at;}
+        });
+        const wait=due-performance.now();
+        if(wait>0){
+          await new Promise(resolve=>{
+            const timer=setTimeout(()=>{plan.wake=null;resolve();},wait);
+            plan.wake=()=>{
+              clearTimeout(timer);
+              plan.wake=null;
+              resolve();
+            };
+          });
+          continue;
+        }
+        const item=plan.pending.splice(next,1)[0];
+        lastGlobal=performance.now();
+        if(item.id!==null)lastArea.set(item.id,lastGlobal);
+        await call(current(item.s));
+      }
+    }finally{
+      plan.wake?.();
+      plans.delete(plan);
     }
   }
   /* Gespeichert wird in Anlagereihenfolge; angezeigt alphabetisch. Sonst

@@ -148,6 +148,13 @@ def test_the_lists_are_sorted_without_losing_the_index() -> None:
     assert "FAIL" not in result.stdout, result.stdout
 
 
+def test_dashboard_group_drives_respect_area_and_global_delays() -> None:
+    """Exercise group timing and stop cancellation through real click handlers."""
+    result = _run("drive_delay.mjs")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "FAIL" not in result.stdout, result.stdout
+
+
 def test_sun_bound_zero_is_explained_in_the_panel() -> None:
     """Eine 0 bei den Sonnengrenzen ist eine Grenze, nur leer ist keine (Linos).
 
