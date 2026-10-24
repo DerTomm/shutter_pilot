@@ -304,6 +304,34 @@ AWNING_GUARD_RAIN = "rain"
 AWNING_GUARD_ICE = "ice"
 AWNING_GUARD_SLOTS = (AWNING_GUARD_WIND, AWNING_GUARD_RAIN, AWNING_GUARD_ICE)
 
+# Wind protection for venetian blinds (2.25.0). A slot of its own, deliberately
+# *not* part of AWNING_GUARD_SLOTS: the awning loop walks that tuple, and a
+# fourth entry would make every awning evaluate - and be barred by - a sensor
+# it never asked for. Same mechanism otherwise (binary alarm sensor, number
+# with hysteresis, text state), so a wind speed and a weather station's alarm
+# contact both work without a line of new evaluation code. Venetian blinds
+# stand much more wind than awnings, hence the separate threshold.
+AWNING_GUARD_RWIND = "rwind"
+STORM_GUARD_SLOTS = (AWNING_GUARD_RWIND,)
+# Runtime state of the protection, per cover. Read by the drive paths through
+# storm_barred(), so the string lives here and not in awning_guard.py.
+AWNING_GUARD_STATE_KEY = "_awning_guard"
+
+# Per venetian blind, all off / unchanged by default (no migration): opt in to
+# the wind protection, and where to go when it blows. Not position_open - on a
+# blind that is usually the lowered position with open slats.
+CONF_STORM_GUARD = "storm_guard"
+CONF_STORM_POSITION = "storm_position"
+CONF_STORM_TILT = "storm_tilt"
+DEFAULT_STORM_POSITION = 100
+DEFAULT_STORM_TILT = 100
+
+# An entity that locks the automation of one cover while it is "on": the
+# actuator's own wind lock, a cleaning-the-windows helper. Nothing automatic is
+# sent meanwhile. Named so it cannot be mistaken for lock_protection, which is
+# the lock-out protection at an open door.
+CONF_AUTOMATION_LOCK_ENTITY = "automation_lock_entity"
+
 # Dusk retract: an awning drives to its rest position once this condition
 # holds, and never automatically back out again once it clears - extending
 # stays shading's job (if enabled) or a manual one. Lives on the awning
@@ -545,6 +573,10 @@ AWNING_UNUSED_KEYS = (
     CONF_DRIVE_AFTER_CLOSE,
     CONF_DRIVE_AFTER_CLOSE_UP,
     CONF_WINDOW_REACT,
+    CONF_STORM_GUARD,
+    CONF_STORM_POSITION,
+    CONF_STORM_TILT,
+    CONF_AUTOMATION_LOCK_ENTITY,
     CONF_TILT_ENABLED,
     CONF_TILT_OPEN,
     CONF_TILT_CLOSED,
@@ -574,6 +606,10 @@ WINDOW_UNUSED_KEYS = (
     CONF_DRIVE_AFTER_CLOSE,
     CONF_DRIVE_AFTER_CLOSE_UP,
     CONF_WINDOW_REACT,
+    CONF_STORM_GUARD,
+    CONF_STORM_POSITION,
+    CONF_STORM_TILT,
+    CONF_AUTOMATION_LOCK_ENTITY,
     CONF_TILT_ENABLED,
     CONF_TILT_OPEN,
     CONF_TILT_CLOSED,
@@ -589,6 +625,7 @@ DEFAULT_AWNING_LOCKOUT = {
     AWNING_GUARD_RAIN: 30,
     # Frost does not gust. The hysteresis on the temperature is the whole story.
     AWNING_GUARD_ICE: 0,
+    AWNING_GUARD_RWIND: 20,
 }
 MAX_AWNING_LOCKOUT = 120
 

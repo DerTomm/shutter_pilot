@@ -37,6 +37,7 @@ from .helpers import (
     is_auto_enabled,
     is_cover_sun_protected,
     is_shutter_automation_enabled,
+    shutter_held,
     only_shutters,
     register_minute_callback,
     set_cover_position,
@@ -88,8 +89,10 @@ async def setup_ventilation(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     def _blocked(shutter: dict, cover: str) -> str | None:
         """Reason this shutter is off limits for ventilation right now."""
-        if not is_shutter_automation_enabled(hass, entry, shutter):
-            return "automation off"
+        if not is_shutter_automation_enabled(hass, entry, shutter) or shutter_held(
+            hass, entry, shutter
+        ):
+            return "automation off, locked or storm"
         if is_cover_sun_protected(data, cover):
             return "shading active"
         if data.get("trigger_actions", {}).get(cover) == "triggered":
@@ -175,7 +178,9 @@ async def setup_ventilation(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 back_to = heights.pop(cover, None)
                 if back_to is None:
                     continue
-                if not is_shutter_automation_enabled(hass, entry, shutter):
+                if not is_shutter_automation_enabled(
+                    hass, entry, shutter
+                ) or shutter_held(hass, entry, shutter):
                     continue
                 to_close.append((shutter, back_to))
 

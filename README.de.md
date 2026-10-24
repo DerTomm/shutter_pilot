@@ -423,6 +423,18 @@ Motor anfahren kann. Ohne sie wird aus jedem Wert ab 50 % „ganz ausfahren" –
 das steht einmal als Warnung im Log und im Export.
 
 
+## Windschutz für Raffstores
+
+Ein Raffstore verträgt mehr Wind als eine Markise, aber nicht beliebig viel, und „sicher" heißt etwas anderes: nicht `position_open` (meist unten mit offenen Lamellen), sondern oben mit offenen Lamellen. Deshalb ist der Schutz eine eigene Einstellung am Rollladen, zum Zuschalten, im Abschnitt *Windschutz Raffstore* (erscheint, sobald Lamellen aktiv sind):
+
+- **Windschutz für diesen Raffstore** – Vorgabe aus, dann ändert sich nichts. An: Meldet der Wind-Sensor Gefahr, fährt der Raffstore sofort auf die **Sturmposition** (Vorgabe 100 %, Lamellen 100 %), am Mindestabstand, am Hauptschalter und an den Automatik-Schaltern vorbei – wie beim Markisenschutz. Solange der Sturm anhält, startet für ihn **keine automatische Fahrt** (Zeitplan, Helligkeit, Beschattung, Lüften, Fensterkontakt). Handfahrten, Dashboard-Knöpfe und Dienste bleiben möglich. Nach dem Sturm wird nur die Sperre aufgehoben, nichts nachgeholt; die nächste planmäßige Fahrt gilt.
+- **Wind-Sensor für Raffstores** – unter *Einstellungen*, getrennt vom Markisen-Windsensor, damit Raffstores eine eigene Schwelle haben. Entweder ein Windgeschwindigkeits-Sensor mit Ein- und Ausschwelle oder ein **Alarm-Binärsensor** (`on` = Sturm), zum Beispiel der, den die Wetterstation schon liefert. Ein Raffstore kann statt des globalen einen eigenen Sensor eintragen. Die Sperrzeit nach dem letzten Alarm ist 20 Minuten.
+- Ein Sensor, der nichts liefert, sperrt den Raffstore ab der ersten Sekunde und fährt ihn nach der Karenz hoch – genau wie beim Markisenschutz.
+
+### Sperr-Entität
+
+Jeder Rollladen kann eine **Sperr-Entität** (`binary_sensor`, `switch` oder `input_boolean`) eintragen. Solange sie `on` ist, sendet Shutter Pilot diesem Cover nichts Automatisches – gedacht für die Windsperre des Aktors oder einen Helfer „Fenster putzen". Von Hand fahren geht weiter. Die Fahrtkontrolle wertet ein gesperrtes Cover nicht als Fehler und wiederholt den Befehl nicht. Danach wird nichts nachgeholt. Eine fehlende oder nicht erreichbare Entität sperrt nicht. Der Windschutz fährt den Raffstore auch durch eine Sperre hindurch hoch.
+
 ## Dachfenster
 
 Seit 2.20.0 gibt es einen eigenen Tab **Dachfenster**. Dahinter steckt dieselbe

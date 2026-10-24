@@ -32,6 +32,7 @@ from .helpers import (
     positions_differ_significantly,
     resting_position,
     is_cover_sun_protected,
+    automation_allowed,
     is_shutter_automation_enabled,
     is_system_enabled,
     only_shutters,
@@ -237,7 +238,7 @@ async def setup_window_triggers(hass: HomeAssistant, entry: ConfigEntry) -> None
                 return
             if not is_system_enabled(hass, entry):
                 return
-            if not is_shutter_automation_enabled(hass, entry, shutter):
+            if not automation_allowed(hass, entry, shutter):
                 return
             _apply_window_closed(shutter, cover_entity, pos_closed)
         except asyncio.CancelledError:
@@ -277,6 +278,12 @@ async def setup_window_triggers(hass: HomeAssistant, entry: ConfigEntry) -> None
                 forget_drive_after_close(hass, entry, data, cover_entity)
                 trigger_actions.pop(cover_entity, None)
                 trigger_heights.pop(cover_entity, None)
+                continue
+            # Locked by its lock entity, or held by the wind protection: no
+            # reaction either. Unlike a switched-off automation the pending
+            # drive stays, it is a decision that is merely not allowed to run
+            # right now.
+            if not automation_allowed(hass, entry, shutter):
                 continue
             pos_closed = shutter.get(CONF_POSITION_CLOSED, 0)
 

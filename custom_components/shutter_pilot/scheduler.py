@@ -38,6 +38,7 @@ from .helpers import (
     get_tilt_for_role,
     is_auto_enabled,
     is_shutter_automation_enabled,
+    shutter_held,
     register_minute_callback,
     set_cover_position,
     should_skip_automated_up,
@@ -108,8 +109,10 @@ async def setup_schedulers(hass: HomeAssistant, entry: ConfigEntry) -> None:
             cover = shutter.get(CONF_COVER_ENTITY_ID)
             if not cover:
                 continue
-            if not is_shutter_automation_enabled(hass, entry, shutter):
-                _LOGGER.info("%s: %s übersprungen (Automatik am Rollladen aus)", direction, cover)
+            if not is_shutter_automation_enabled(hass, entry, shutter) or shutter_held(
+                hass, entry, shutter
+            ):
+                _LOGGER.info("%s: %s übersprungen (Automatik aus, gesperrt oder Sturm)", direction, cover)
                 continue
             # Some shutters should only close part way – against frost, or on a
             # mild evening. The area decides when, the shutter decides how far.

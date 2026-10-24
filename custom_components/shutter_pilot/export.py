@@ -42,6 +42,8 @@ from .const import (
     WINDOW_UNUSED_KEYS,
     AWNING_DUSK_SLOT,
     AWNING_GUARD_SLOTS,
+    CONF_AUTOMATION_LOCK_ENTITY,
+    STORM_GUARD_SLOTS,
     AWNING_GUARD_ICE,
     AWNING_GUARD_RAIN,
     AWNING_GUARD_WIND,
@@ -92,6 +94,8 @@ from .helpers import (
     rest_role,
     awning_dusk_condition_met,
     has_guard,
+    has_storm_guard,
+    is_shutter_locked,
     is_window,
     automated_up_blocked,
     azimuth_in_sun_protect_range,
@@ -343,6 +347,8 @@ def _guard_rows(
     entry: ConfigEntry,
     data: dict[str, Any],
     shutter: dict[str, Any],
+    slots: tuple[str, ...] = AWNING_GUARD_SLOTS,
+    title: str = "Wind-, Regen- und Frostschutz:",
 ) -> list[str]:
     """The protection verdict for one awning, with values and units.
 
@@ -354,11 +360,11 @@ def _guard_rows(
     from .awning_guard import guard_status, resolve_guard_config
 
     cover = str(shutter.get(CONF_COVER_ENTITY_ID) or "")
-    config = resolve_guard_config(dict(entry.options or {}), shutter)
+    config = resolve_guard_config(dict(entry.options or {}), shutter, slots)
     status = guard_status(data, cover)
 
     rows: list[str] = []
-    for slot in AWNING_GUARD_SLOTS:
+    for slot in slots:
         entity_key, on_key, off_key, states_key = sun_condition_keys(slot)
         entity_id = str(config.get(entity_key) or "").strip()
         if not entity_id:
@@ -397,7 +403,7 @@ def _guard_rows(
         )
 
     out = [
-        "Wind-, Regen- und Frostschutz:",
+        title,
         "",
         "| Schutz | Sensor | Wert jetzt | Schwellen | Ergebnis |",
         "| --- | --- | --- | --- | --- |",
@@ -410,7 +416,7 @@ def _guard_rows(
     # und nie wieder aus – und in der Tabelle daneben steht eine Schwelle, die
     # so aussieht, als wuerde sie geprueft. Gemeldet als "mein Regensensor
     # liefert nur nass und trocken".
-    for slot in AWNING_GUARD_SLOTS:
+    for slot in slots:
         entity_key, _on, _off, states_key = sun_condition_keys(slot)
         entity_id = str(config.get(entity_key) or "").strip()
         if not entity_id or _is_set(config.get(states_key)):
@@ -1339,6 +1345,21 @@ async def async_build_export(
         elif is_window(shutter):
             out += _window_silent_notes(shutter, down_area)
             out += _guard_rows(hass, entry, data, shutter)
+        else:
+            if has_storm_guard(shutter):
+                out += _guard_rows(
+                    hass, entry, data, shutter, STORM_GUARD_SLOTS,
+                    "Windschutz (Raffstore):",
+                )
+            lock_id = str(shutter.get(CONF_AUTOMATION_LOCK_ENTITY) or "").strip()
+            if lock_id:
+                held = "⛔ **gesperrt**, es fährt nichts Automatisches" if (
+                    is_shutter_locked(hass, shutter)
+                ) else "✅ frei"
+                out += [
+                    f"Sperr-Entität: `{lock_id}` ({_state_of(hass, lock_id)}) – {held}",
+                    "",
+                ]
 
         if down_area is not None and down_area.get(CONF_AREA_SUN_PROTECT_ENABLED):
             if not is_system_enabled(hass, entry):

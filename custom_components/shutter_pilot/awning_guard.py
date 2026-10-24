@@ -39,7 +39,13 @@ from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import (
     AWNING_GUARD_SLOTS,
+    AWNING_GUARD_STATE_KEY,
     CONF_AWNING_SENSOR_GRACE,
+    CONF_STORM_POSITION,
+    CONF_STORM_TILT,
+    DEFAULT_STORM_POSITION,
+    DEFAULT_STORM_TILT,
+    STORM_GUARD_SLOTS,
     CONF_COVER_ENTITY_ID,
     CONF_SHUTTERS,
     DEFAULT_AWNING_LOCKOUT,
@@ -60,6 +66,7 @@ from .helpers import (
     guard_slot_danger,
     is_window,
     only_guarded,
+    only_storm_guarded,
     register_minute_callback,
     set_cover_position,
     set_cover_sun_protected,
@@ -68,13 +75,15 @@ from .helpers import (
 _LOGGER = logging.getLogger(__name__)
 
 # Runtime state per cover: when the last danger was seen, and what it was.
-STATE_KEY = "_awning_guard"
+STATE_KEY = AWNING_GUARD_STATE_KEY
 # When a guard sensor first became unreadable, per cover and slot.
 DEAD_SINCE_KEY = "_awning_guard_dead_since"
 
 
 def resolve_guard_config(
-    options: dict[str, Any], shutter: dict[str, Any]
+    options: dict[str, Any],
+    shutter: dict[str, Any],
+    slots: tuple[str, ...] = AWNING_GUARD_SLOTS,
 ) -> dict[str, Any]:
     """Merge the global protection settings with this awning's overrides.
 
@@ -89,7 +98,7 @@ def resolve_guard_config(
     stored, displayed and silently ignored.
     """
     merged: dict[str, Any] = {}
-    for slot in AWNING_GUARD_SLOTS:
+    for slot in slots:
         keys = (
             *sun_condition_keys(slot),
             awning_lockout_key(slot),
@@ -133,6 +142,7 @@ def evaluate_guard(
     shutter: dict[str, Any],
     *,
     now: float | None = None,
+    slots: tuple[str, ...] = AWNING_GUARD_SLOTS,
 ) -> dict[str, Any]:
     """Decide whether this awning may be out, and say why not.
 
@@ -142,7 +152,7 @@ def evaluate_guard(
     """
     cover = str(shutter.get(CONF_COVER_ENTITY_ID) or "").strip()
     options = dict(entry.options or {})
-    config = resolve_guard_config(options, shutter)
+    config = resolve_guard_config(options, shutter, slots)
     now = time.monotonic() if now is None else now
 
     states: dict[str, dict[str, Any]] = data.setdefault(STATE_KEY, {})
@@ -154,7 +164,7 @@ def evaluate_guard(
     reasons: list[str] = []
     release_at: float | None = None
 
-    for slot in AWNING_GUARD_SLOTS:
+    for slot in slots:
         danger, why = guard_slot_danger(hass, config, data, slot, cover)
         dead_key = f"{cover}|{slot}"
 
@@ -307,6 +317,63 @@ async def async_retract_awning(
     return True
 
 
+def storm_target(shutter: dict[str, Any]) -> tuple[float, float]:
+    """Where a venetian blind goes when the wind protection fires.
+
+    Its own pair of numbers, not the open role: on a blind "open" is usually
+    the lowered position with open slats, which is the one place to avoid.
+    """
+    def _num(key: str, default: float) -> float:
+        try:
+            return max(0.0, min(100.0, float(shutter.get(key, default))))
+        except (TypeError, ValueError):
+            return float(default)
+
+    return (
+        _num(CONF_STORM_POSITION, DEFAULT_STORM_POSITION),
+        _num(CONF_STORM_TILT, DEFAULT_STORM_TILT),
+    )
+
+
+async def async_retract_storm(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    data: dict[str, Any],
+    shutter: dict[str, Any],
+    reasons: list[str],
+) -> bool:
+    """Pull one venetian blind up, bypassing the drive gap and every lock."""
+    cover = str(shutter.get(CONF_COVER_ENTITY_ID) or "").strip()
+    if not cover:
+        return False
+    position, tilt = storm_target(shutter)
+    reason_text = describe_reasons(reasons)
+    ok = await set_cover_position(
+        hass,
+        entry,
+        cover,
+        position,
+        f"Storm protection ({reason_text})",
+        tilt_position=tilt,
+        urgent=True,
+    )
+    if not ok:
+        _LOGGER.warning("[storm] %s: drive to safety failed – retrying next tick", cover)
+        return False
+    set_cover_sun_protected(data, cover, False)
+    hass.bus.async_fire(
+        EVENT_AWNING_RETRACTED,
+        {
+            "entity_id": cover,
+            "reasons": list(reasons),
+            "reason": reason_text,
+            "kind": "venetian_blind",
+        },
+    )
+    _LOGGER.warning("[storm] %s: driven to safety – %s", cover, reason_text)
+    return True
+
+
 async def async_enforce_guard(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Evaluate every awning and pull in the ones that must not be out."""
     data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
@@ -337,6 +404,24 @@ async def async_enforce_guard(hass: HomeAssistant, entry: ConfigEntry) -> None:
         ):
             state["retracted"] = True
 
+    # Venetian blinds with the wind protection switched on: the same engine on a
+    # slot of their own. Never the awning slots, and the awning loop above does
+    # not know these covers.
+    for shutter in only_storm_guarded(shutters):
+        cover = str(shutter.get(CONF_COVER_ENTITY_ID) or "").strip()
+        if not cover:
+            continue
+        state = evaluate_guard(hass, entry, data, shutter, slots=STORM_GUARD_SLOTS)
+        if not state.get("retract"):
+            state.pop("retracted", None)
+            continue
+        if state.get("retracted"):
+            continue
+        if await async_retract_storm(
+            hass, entry, data, shutter, state.get("reasons", [])
+        ):
+            state["retracted"] = True
+
 
 async def setup_awning_guard(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Watch the guard sensors and hold the minute tick as a safety net."""
@@ -355,15 +440,19 @@ async def setup_awning_guard(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if not isinstance(shutters, list):
         shutters = []
     awnings = only_guarded(shutters)
-    if not awnings:
+    blinds = only_storm_guarded(shutters)
+    if not awnings and not blinds:
         register_minute_callback(data, "awning_guard", None)
         return
 
     options = dict(entry.options or {})
     watched: set[str] = set()
-    for shutter in awnings:
-        config = resolve_guard_config(options, shutter)
-        for slot in AWNING_GUARD_SLOTS:
+    for shutter, slots in (
+        *((s, AWNING_GUARD_SLOTS) for s in awnings),
+        *((s, STORM_GUARD_SLOTS) for s in blinds),
+    ):
+        config = resolve_guard_config(options, shutter, slots)
+        for slot in slots:
             entity_id = str(config.get(sun_condition_keys(slot)[0]) or "").strip()
             if entity_id:
                 watched.add(entity_id)
@@ -385,5 +474,6 @@ async def setup_awning_guard(hass: HomeAssistant, entry: ConfigEntry) -> None:
     register_minute_callback(data, "awning_guard", _tick)
     hass.async_create_task(async_enforce_guard(hass, entry))
     _LOGGER.info(
-        "Awning protection: %d awnings, %d sensor(s) watched", len(awnings), len(watched)
+        "Awning protection: %d awnings, %d blinds, %d sensor(s) watched",
+        len(awnings), len(blinds), len(watched)
     )

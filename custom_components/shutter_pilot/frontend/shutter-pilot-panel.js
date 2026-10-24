@@ -115,7 +115,7 @@ const AWNING_UNUSED_KEYS = ["area_up_id","position_closed","position_closed_alt"
   "position_closed_frost","window_entity_id","window_entity_id_2","window_open_state",
   "window_tilted_state","window_tilted_entity_id","window_tilted_entity_state",
   "position_when_window_open","position_when_window_tilted","lock_protection",
-  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close","drive_after_close_up","window_react",
+  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close","drive_after_close_up","window_react","storm_guard","storm_position","storm_tilt","automation_lock_entity",
   "tilt_enabled","tilt_open","tilt_closed","tilt_sun_protect"];
 /* Dasselbe fuer das Dachfenster. Es behaelt `position_closed` – zu ist dort
    die Ruhestellung –, verliert aber die Fensterkontakt-Schluessel: der Cover
@@ -124,7 +124,7 @@ const WINDOW_UNUSED_KEYS = ["area_up_id","position_closed_alt",
   "position_closed_frost","window_entity_id","window_entity_id_2","window_open_state",
   "window_tilted_state","window_tilted_entity_id","window_tilted_entity_state",
   "position_when_window_open","position_when_window_tilted","lock_protection",
-  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close","drive_after_close_up","window_react",
+  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close","drive_after_close_up","window_react","storm_guard","storm_position","storm_tilt","automation_lock_entity",
   "tilt_enabled","tilt_open","tilt_closed","tilt_sun_protect"];
 
 /* Vorfilterung je Feld. `classes` prüft device_class, `pattern` den
@@ -263,6 +263,7 @@ de:{
   sec_window:"Fenster & Lüftung",
   sec_window_sub:"Kontakte, Lüftungsposition, Aussperrschutz",
   sec_slats:"Lamellen",
+  sec_storm:"Windschutz Raffstore",sec_storm_sub:"fährt bei Sturm hoch und hält still",f_storm_guard:"Windschutz für diesen Raffstore",f_storm_guard_hint:"Aus: wie bisher. An: Bei Wind fährt er sofort auf die Sturmposition und führt keine automatische Fahrt aus (Zeit, Helligkeit, Beschattung), solange der Sturm anhält. Von Hand bleibt alles möglich. Nach dem Sturm wird nur die Sperre aufgehoben, nichts nachgeholt. Der Schutz gilt auch bei ausgeschalteter Automatik.",f_storm_position:"Sturmposition",f_storm_tilt:"Lamellen bei Sturm",f_guard_rwind:"Wind-Sensor Raffstore",f_guard_lockout_hint_rwind:"Nach dem letzten Alarm bleibt der Raffstore noch so lange gesperrt. Jeder neue Alarm startet die Zeit von vorn.",sec_rwind:"Wind-Sensor für Raffstores",sec_rwind_sub:"getrennt von den Markisen",f_rwind_intro:"Ein Windgeschwindigkeits-Sensor mit eigener Schwelle oder ein Alarm-Binärsensor (on = Sturm), zum Beispiel von der Wetterstation. Gilt für alle Raffstores mit Windschutz, die keinen eigenen Sensor eingetragen haben. Die Markisen-Einstellungen bleiben unberührt.",f_lock_entity:"Sperr-Entität",f_lock_entity_hint:"Solange sie on ist, sendet Shutter Pilot diesem Cover nichts Automatisches, zum Beispiel bei einem Windalarm am Aktor oder beim Fensterputzen. Von Hand fahren geht weiter. Nach dem Aufheben wird nichts nachgeholt; die nächste planmäßige Fahrt gilt.",
   sec_slats_sub:"nur für Jalousien und Raffstores",
   ent_matching:"Passende",
   ent_others:"Alle weiteren",
@@ -626,6 +627,7 @@ en:{
   sec_window:"Window & ventilation",
   sec_window_sub:"contacts, ventilation position, lock protection",
   sec_slats:"Slats",
+  sec_storm:"Venetian blind wind protection",sec_storm_sub:"goes up in a storm and stays put",f_storm_guard:"Wind protection for this blind",f_storm_guard_hint:"Off: as before. On: in wind it drives to the storm position at once and starts no automatic drive (time, brightness, shading) while the storm lasts. Hand drives stay possible. After the storm only the hold is lifted, nothing is caught up. The protection applies even with the automation switched off.",f_storm_position:"Storm position",f_storm_tilt:"Slats in a storm",f_guard_rwind:"Wind sensor for blinds",f_guard_lockout_hint_rwind:"After the last alarm the blind stays held for this long. Every new alarm restarts the time.",sec_rwind:"Wind sensor for venetian blinds",sec_rwind_sub:"separate from the awnings",f_rwind_intro:"A wind speed sensor with its own threshold or an alarm binary sensor (on = storm), for example from the weather station. Applies to every blind with wind protection that has no sensor of its own. The awning settings stay untouched.",f_lock_entity:"Lock entity",f_lock_entity_hint:"While it is on, Shutter Pilot sends this cover nothing automatic, for example during a wind alarm at the actuator or while cleaning windows. Hand drives still work. Nothing is caught up afterwards; the next scheduled drive applies.",
   sec_slats_sub:"venetian blinds only",
   ent_matching:"Matching",
   ent_others:"All others",
@@ -953,6 +955,7 @@ fr:{
   sec_window:"Fenêtre & aération",
   sec_window_sub:"contacts, position d'aération, anti-enfermement",
   sec_slats:"Lames",
+  sec_storm:"Protection vent store à lamelles",sec_storm_sub:"monte en cas de tempête et reste immobile",f_storm_guard:"Protection vent pour ce store",f_storm_guard_hint:"Désactivé : comme avant. Activé : par vent il monte aussitôt à la position tempête et ne lance aucun mouvement automatique (heure, luminosité, ombrage) tant que la tempête dure. La commande manuelle reste possible. Après la tempête seule la retenue est levée, rien n'est rattrapé. La protection agit même avec l'automatisme éteint.",f_storm_position:"Position tempête",f_storm_tilt:"Lamelles en cas de tempête",f_guard_rwind:"Capteur de vent pour stores",f_guard_lockout_hint_rwind:"Après la dernière alarme le store reste retenu aussi longtemps. Chaque nouvelle alarme relance le délai.",sec_rwind:"Capteur de vent pour stores à lamelles",sec_rwind_sub:"séparé des stores bannes",f_rwind_intro:"Un capteur de vitesse du vent avec son propre seuil ou un capteur binaire d'alarme (on = tempête), par exemple de la station météo. Valable pour tous les stores avec protection vent sans capteur propre. Les réglages des stores bannes restent inchangés.",f_lock_entity:"Entité de blocage",f_lock_entity_hint:"Tant qu'elle est on, Shutter Pilot n'envoie rien d'automatique à ce volet, par exemple lors d'une alarme vent de l'actionneur ou du nettoyage des vitres. La commande manuelle fonctionne toujours. Rien n'est rattrapé ensuite ; le prochain mouvement prévu s'applique.",
   sec_slats_sub:"stores vénitiens uniquement",
   ent_matching:"Correspondants",
   ent_others:"Tous les autres",
@@ -1258,6 +1261,7 @@ es:{
   sec_window:"Ventana y ventilación",
   sec_window_sub:"contactos, posición de ventilación, antibloqueo",
   sec_slats:"Lamas",
+  sec_storm:"Protección contra el viento de la persiana veneciana",sec_storm_sub:"sube con tormenta y se queda quieta",f_storm_guard:"Protección contra el viento para esta persiana",f_storm_guard_hint:"Desactivado: como antes. Activado: con viento va al instante a la posición de tormenta y no inicia ningún movimiento automático (hora, luminosidad, sombreado) mientras dure. A mano sigue siendo posible. Tras la tormenta solo se levanta el bloqueo, no se recupera nada. La protección actúa aunque la automatización esté apagada.",f_storm_position:"Posición de tormenta",f_storm_tilt:"Lamas con tormenta",f_guard_rwind:"Sensor de viento para persianas",f_guard_lockout_hint_rwind:"Tras la última alarma la persiana sigue retenida este tiempo. Cada alarma nueva reinicia el tiempo.",sec_rwind:"Sensor de viento para persianas venecianas",sec_rwind_sub:"separado de los toldos",f_rwind_intro:"Un sensor de velocidad del viento con su propio umbral o un sensor binario de alarma (on = tormenta), por ejemplo de la estación meteorológica. Vale para todas las persianas con protección que no tengan sensor propio. Los ajustes de los toldos no cambian.",f_lock_entity:"Entidad de bloqueo",f_lock_entity_hint:"Mientras esté on, Shutter Pilot no envía nada automático a este cover, por ejemplo con una alarma de viento en el actuador o al limpiar ventanas. A mano sigue funcionando. Después no se recupera nada; vale el siguiente movimiento programado.",
   sec_slats_sub:"solo persianas venecianas",
   ent_matching:"Coincidencias",
   ent_others:"Todos los demás",
@@ -1563,6 +1567,7 @@ it:{
   sec_window:"Finestra e aerazione",
   sec_window_sub:"contatti, posizione di aerazione, antichiusura",
   sec_slats:"Lamelle",
+  sec_storm:"Protezione dal vento frangisole",sec_storm_sub:"sale con la tempesta e resta ferma",f_storm_guard:"Protezione dal vento per questo frangisole",f_storm_guard_hint:"Disattivato: come prima. Attivato: con il vento va subito alla posizione di tempesta e non avvia movimenti automatici (orario, luminosità, ombreggiamento) finché dura. A mano resta possibile. Dopo la tempesta si toglie solo il blocco, nulla viene recuperato. La protezione vale anche con l'automazione spenta.",f_storm_position:"Posizione di tempesta",f_storm_tilt:"Lamelle con tempesta",f_guard_rwind:"Sensore vento per frangisole",f_guard_lockout_hint_rwind:"Dopo l'ultimo allarme il frangisole resta bloccato per questo tempo. Ogni nuovo allarme riavvia il tempo.",sec_rwind:"Sensore vento per frangisole",sec_rwind_sub:"separato dalle tende da sole",f_rwind_intro:"Un sensore di velocità del vento con soglia propria o un sensore binario di allarme (on = tempesta), ad esempio della stazione meteo. Vale per tutti i frangisole con protezione senza sensore proprio. Le impostazioni delle tende restano invariate.",f_lock_entity:"Entità di blocco",f_lock_entity_hint:"Finché è on, Shutter Pilot non invia nulla di automatico a questo cover, ad esempio con un allarme vento sull'attuatore o durante la pulizia dei vetri. A mano funziona ancora. Dopo non si recupera nulla; vale il prossimo movimento programmato.",
   sec_slats_sub:"solo veneziane",
   ent_matching:"Corrispondenti",
   ent_others:"Tutti gli altri",
@@ -1868,6 +1873,7 @@ nl:{
   sec_window:"Raam & ventilatie",
   sec_window_sub:"contacten, ventilatiestand, uitsluitbeveiliging",
   sec_slats:"Lamellen",
+  sec_storm:"Windbeveiliging lamellenscherm",sec_storm_sub:"gaat omhoog bij storm en blijft staan",f_storm_guard:"Windbeveiliging voor dit lamellenscherm",f_storm_guard_hint:"Uit: zoals voorheen. Aan: bij wind gaat het direct naar de stormstand en start geen automatische rit (tijd, helderheid, schaduw) zolang de storm duurt. Met de hand blijft alles mogelijk. Na de storm wordt alleen de blokkade opgeheven, er wordt niets ingehaald. De beveiliging werkt ook bij uitgeschakelde automatiek.",f_storm_position:"Stormstand",f_storm_tilt:"Lamellen bij storm",f_guard_rwind:"Windsensor voor lamellenschermen",f_guard_lockout_hint_rwind:"Na het laatste alarm blijft het scherm zo lang geblokkeerd. Elk nieuw alarm start de tijd opnieuw.",sec_rwind:"Windsensor voor lamellenschermen",sec_rwind_sub:"los van de zonneschermen",f_rwind_intro:"Een windsnelheidssensor met eigen drempel of een binaire alarmsensor (on = storm), bijvoorbeeld van het weerstation. Geldt voor alle lamellenschermen met windbeveiliging zonder eigen sensor. De instellingen van de zonneschermen blijven ongewijzigd.",f_lock_entity:"Blokkeer-entiteit",f_lock_entity_hint:"Zolang deze on is, stuurt Shutter Pilot niets automatisch naar deze cover, bijvoorbeeld bij een windalarm in de actuator of bij het ramen zemen. Met de hand rijden kan nog. Er wordt niets ingehaald; de volgende geplande rit geldt.",
   sec_slats_sub:"alleen jaloezieën",
   ent_matching:"Passend",
   ent_others:"Alle overige",
@@ -2174,6 +2180,7 @@ da:{
   sec_window:"Vindue & udluftning",
   sec_window_sub:"kontakter, udluftningsposition, låsesikring",
   sec_slats:"Lameller",
+  sec_storm:"Vindbeskyttelse lamelgardin",sec_storm_sub:"kører op ved storm og bliver stående",f_storm_guard:"Vindbeskyttelse til dette lamelgardin",f_storm_guard_hint:"Fra: som før. Til: ved vind kører det straks til stormposition og starter ingen automatisk kørsel (tid, lysstyrke, skygge), så længe stormen varer. I hånden er alt muligt. Efter stormen ophæves kun spærringen, intet indhentes. Beskyttelsen gælder også ved slukket automatik.",f_storm_position:"Stormposition",f_storm_tilt:"Lameller ved storm",f_guard_rwind:"Vindsensor til lamelgardiner",f_guard_lockout_hint_rwind:"Efter den sidste alarm forbliver gardinet spærret så længe. Hver ny alarm starter tiden forfra.",sec_rwind:"Vindsensor til lamelgardiner",sec_rwind_sub:"adskilt fra markiserne",f_rwind_intro:"En vindhastighedssensor med egen tærskel eller en binær alarmsensor (on = storm), for eksempel fra vejrstationen. Gælder alle lamelgardiner med vindbeskyttelse uden egen sensor. Markisernes indstillinger er uændrede.",f_lock_entity:"Spærre-entitet",f_lock_entity_hint:"Så længe den er on, sender Shutter Pilot intet automatisk til dette cover, for eksempel ved vindalarm i aktuatoren eller under vinduespudsning. Manuel kørsel virker stadig. Intet indhentes bagefter; den næste planlagte kørsel gælder.",
   sec_slats_sub:"kun persienner",
   ent_matching:"Matchende",
   ent_others:"Alle øvrige",
@@ -2480,6 +2487,7 @@ sv:{
   sec_window:"Fönster & vädring",
   sec_window_sub:"kontakter, vädringsläge, utelåsningsskydd",
   sec_slats:"Lameller",
+  sec_storm:"Vindskydd persienn",sec_storm_sub:"åker upp vid storm och står still",f_storm_guard:"Vindskydd för denna persienn",f_storm_guard_hint:"Av: som förut. På: vid vind kör den direkt till stormläget och startar ingen automatisk körning (tid, ljusstyrka, solskydd) så länge stormen varar. För hand går allt. Efter stormen hävs bara spärren, inget hämtas in. Skyddet gäller även med avstängd automatik.",f_storm_position:"Stormläge",f_storm_tilt:"Lameller vid storm",f_guard_rwind:"Vindsensor för persienner",f_guard_lockout_hint_rwind:"Efter det senaste larmet förblir persiennen spärrad så länge. Varje nytt larm startar tiden om.",sec_rwind:"Vindsensor för persienner",sec_rwind_sub:"skilt från markiserna",f_rwind_intro:"En vindhastighetssensor med eget tröskelvärde eller en binär larmsensor (on = storm), till exempel från väderstationen. Gäller alla persienner med vindskydd utan egen sensor. Markisernas inställningar är oförändrade.",f_lock_entity:"Spärr-entitet",f_lock_entity_hint:"Så länge den är on skickar Shutter Pilot inget automatiskt till denna cover, till exempel vid vindlarm i ställdonet eller under fönsterputsning. Manuell körning fungerar. Inget hämtas in efteråt; nästa planerade körning gäller.",
   sec_slats_sub:"endast persienner",
   ent_matching:"Matchande",
   ent_others:"Alla övriga",
@@ -2786,6 +2794,7 @@ pl:{
   sec_window:"Okno i wietrzenie",
   sec_window_sub:"kontaktrony, pozycja wietrzenia, zabezpieczenie",
   sec_slats:"Lamele",
+  sec_storm:"Ochrona przed wiatrem żaluzji",sec_storm_sub:"podnosi się przy wichurze i stoi",f_storm_guard:"Ochrona przed wiatrem dla tej żaluzji",f_storm_guard_hint:"Wyłączone: jak dotąd. Włączone: przy wietrze od razu jedzie do pozycji sztormowej i nie rozpoczyna automatycznych przejazdów (czas, jasność, zacienianie), dopóki trwa wichura. Ręcznie wszystko nadal możliwe. Po wichurze zdejmowana jest tylko blokada, nic nie jest nadrabiane. Ochrona działa także przy wyłączonej automatyce.",f_storm_position:"Pozycja sztormowa",f_storm_tilt:"Lamele podczas wichury",f_guard_rwind:"Czujnik wiatru dla żaluzji",f_guard_lockout_hint_rwind:"Po ostatnim alarmie żaluzja pozostaje zablokowana przez ten czas. Każdy nowy alarm uruchamia czas od nowa.",sec_rwind:"Czujnik wiatru dla żaluzji",sec_rwind_sub:"oddzielnie od markiz",f_rwind_intro:"Czujnik prędkości wiatru z własnym progiem lub binarny czujnik alarmu (on = wichura), na przykład ze stacji pogodowej. Dotyczy wszystkich żaluzji z ochroną bez własnego czujnika. Ustawienia markiz pozostają bez zmian.",f_lock_entity:"Encja blokady",f_lock_entity_hint:"Dopóki jest on, Shutter Pilot nie wysyła temu coverowi nic automatycznego, na przykład przy alarmie wiatru w siłowniku lub podczas mycia okien. Ręczne sterowanie nadal działa. Potem nic nie jest nadrabiane; obowiązuje następny planowy przejazd.",
   sec_slats_sub:"tylko żaluzje",
   ent_matching:"Pasujące",
   ent_others:"Wszystkie pozostałe",
@@ -3092,6 +3101,7 @@ pt:{
   sec_window:"Janela e ventilação",
   sec_window_sub:"contactos, posição de ventilação, proteção",
   sec_slats:"Lâminas",
+  sec_storm:"Proteção contra vento do estore veneziano",sec_storm_sub:"sobe com tempestade e fica parado",f_storm_guard:"Proteção contra vento para este estore",f_storm_guard_hint:"Desligado: como antes. Ligado: com vento vai logo para a posição de tempestade e não inicia movimentos automáticos (hora, luminosidade, sombreamento) enquanto durar. À mão tudo continua possível. Depois da tempestade só se levanta o bloqueio, nada é recuperado. A proteção atua mesmo com a automação desligada.",f_storm_position:"Posição de tempestade",f_storm_tilt:"Lâminas com tempestade",f_guard_rwind:"Sensor de vento para estores",f_guard_lockout_hint_rwind:"Após o último alarme o estore fica retido durante este tempo. Cada novo alarme reinicia o tempo.",sec_rwind:"Sensor de vento para estores venezianos",sec_rwind_sub:"separado dos toldos",f_rwind_intro:"Um sensor de velocidade do vento com limite próprio ou um sensor binário de alarme (on = tempestade), por exemplo da estação meteorológica. Vale para todos os estores com proteção sem sensor próprio. As definições dos toldos ficam inalteradas.",f_lock_entity:"Entidade de bloqueio",f_lock_entity_hint:"Enquanto estiver on, o Shutter Pilot não envia nada automático a este cover, por exemplo com um alarme de vento no atuador ou ao limpar janelas. À mão continua a funcionar. Depois nada é recuperado; vale o próximo movimento programado.",
   sec_slats_sub:"apenas estores venezianos",
   ent_matching:"Correspondentes",
   ent_others:"Todos os outros",
@@ -3398,6 +3408,7 @@ nb:{
   sec_window:"Vindu og lufting",
   sec_window_sub:"kontakter, luftestilling, utelåsingsvern",
   sec_slats:"Lameller",
+  sec_storm:"Vindvern lamellgardin",sec_storm_sub:"kjører opp ved storm og blir stående",f_storm_guard:"Vindvern for dette lamellgardinet",f_storm_guard_hint:"Av: som før. På: ved vind kjører det straks til stormposisjon og starter ingen automatisk kjøring (tid, lysstyrke, skygge) så lenge stormen varer. For hånd er alt mulig. Etter stormen oppheves bare sperren, ingenting tas igjen. Vernet gjelder også med automatikken av.",f_storm_position:"Stormposisjon",f_storm_tilt:"Lameller ved storm",f_guard_rwind:"Vindsensor for lamellgardiner",f_guard_lockout_hint_rwind:"Etter siste alarm blir gardinet sperret så lenge. Hver ny alarm starter tiden på nytt.",sec_rwind:"Vindsensor for lamellgardiner",sec_rwind_sub:"atskilt fra markisene",f_rwind_intro:"En vindhastighetssensor med egen terskel eller en binær alarmsensor (on = storm), for eksempel fra værstasjonen. Gjelder alle lamellgardiner med vindvern uten egen sensor. Markisenes innstillinger er uendret.",f_lock_entity:"Sperre-entitet",f_lock_entity_hint:"Så lenge den er on, sender Shutter Pilot ingenting automatisk til dette coveret, for eksempel ved vindalarm i aktuatoren eller under vindusvask. Manuell kjøring virker fortsatt. Ingenting tas igjen etterpå; neste planlagte kjøring gjelder.",
   sec_slats_sub:"kun persienner",
   ent_matching:"Treff",
   ent_others:"Alle andre",
@@ -4558,6 +4569,15 @@ class ShutterPilotPanel extends PanelBase {
         <span class="slider-val">${s.awning_sensor_grace??10} min</span></div>
         <div class="hint">${T("f_guard_grace_hint")}</div></div>
 
+      `)}${this._sec("mdi:weather-windy","sec_rwind","sec_rwind_sub",html`
+      <div class="hint">${T("f_rwind_intro")}</div>
+      ${this._renderGuardSlot(
+        s,"rwind",
+        (k,lbl,domains,hint=null)=>this._entityField(s,k,lbl,domains,hint),
+        (k,lbl,min,max,step=1,suffix="")=>html`<div class="field"><label>${lbl}</label><div class="slider-row">
+          <input type="range" min="${min}" max="${max}" step="${step}" .value=${s[k]??min} @input=${e=>{s[k]=Number(e.target.value);this.requestUpdate();}}>
+          <span class="slider-val">${s[k]??min}${suffix}</span></div></div>`,
+        false)}
       `)}${this._sec("mdi:transit-connection-horizontal","sec_drive","sec_drive_sub",html`
       <div class="hint">${T("f_min_gap_hint")}</div>
       <div class="field"><label>${T("f_min_gap")}</label><div class="slider-row">
@@ -5817,12 +5837,19 @@ class ShutterPilotPanel extends PanelBase {
       <div class="field"><label><input type="checkbox" .checked=${!!s.blind_drive}
         @change=${e=>{s.blind_drive=e.target.checked;this.requestUpdate();}}> ${T("f_blind_drive")}</label>
         <div class="hint">${T("f_blind_drive_hint")}</div></div>
+      ${ep("automation_lock_entity",T("f_lock_entity"),["binary_sensor","switch","input_boolean"])}
+      <div class="hint">${T("f_lock_entity_hint")}</div>
       ${this._renderMyPosition(s,ep,pct)}
 
       `)}${this._sec("mdi:blinds-horizontal","sec_slats","sec_slats_sub",html`
       <div class="field"><label><input type="checkbox" .checked=${!!s.tilt_enabled} @change=${e=>{s.tilt_enabled=e.target.checked;this.requestUpdate();}}> ${T("f_tilt")}</label>
         <div class="hint">${this._supportsTilt(s.cover_entity_id)?T("f_tilt_hint"):T("f_tilt_unsupported")}</div></div>
-      ${s.tilt_enabled?html`${pct("tilt_open",T("f_tilt_open"))}${pct("tilt_closed",T("f_tilt_closed"))}${pct("tilt_sun_protect",T("f_tilt_sun"))}`:""}`)}
+      ${s.tilt_enabled?html`${pct("tilt_open",T("f_tilt_open"))}${pct("tilt_closed",T("f_tilt_closed"))}${pct("tilt_sun_protect",T("f_tilt_sun"))}`:""}`)}${(s.tilt_enabled||s.storm_guard)?this._sec("mdi:weather-windy","sec_storm","sec_storm_sub",html`
+      <div class="field"><label><input type="checkbox" .checked=${!!s.storm_guard}
+        @change=${e=>{s.storm_guard=e.target.checked;if(e.target.checked){if(s.storm_position==null)s.storm_position=100;if(s.storm_tilt==null)s.storm_tilt=100;}this.requestUpdate();}}> ${T("f_storm_guard")}</label>
+        <div class="hint">${T("f_storm_guard_hint")}</div></div>
+      ${s.storm_guard?html`${pct("storm_position",T("f_storm_position"))}${pct("storm_tilt",T("f_storm_tilt"))}
+        ${this._renderGuardSlot(s,"rwind",ep,pctRange,true)}`:""}`):""}
 
       <div class="form-actions">
         <button class="btn save" @click=${()=>this._saveShutter()}><ha-icon icon="mdi:content-save"></ha-icon>${T("btn_save")}</button>

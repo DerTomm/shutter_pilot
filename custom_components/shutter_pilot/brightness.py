@@ -64,6 +64,7 @@ from .helpers import (
     get_tilt_for_role,
     is_auto_enabled,
     is_shutter_automation_enabled,
+    shutter_held,
     only_shutters,
     register_minute_callback,
     remember_drive_after_close,
@@ -281,7 +282,9 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
                 continue
             if episode is not None and down_fired.get(cover_entity) == episode:
                 continue
-            if not is_shutter_automation_enabled(hass, entry, shutter):
+            if not is_shutter_automation_enabled(hass, entry, shutter) or shutter_held(
+                hass, entry, shutter
+            ):
                 continue
             if episode is not None:
                 down_fired[cover_entity] = episode
@@ -381,7 +384,9 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
                 continue
             if episode is not None and up_fired.get(cover_entity) == episode:
                 continue
-            if not is_shutter_automation_enabled(hass, entry, shutter):
+            if not is_shutter_automation_enabled(hass, entry, shutter) or shutter_held(
+                hass, entry, shutter
+            ):
                 continue
             if should_skip_automated_up(
                 hass,

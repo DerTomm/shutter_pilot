@@ -78,3 +78,42 @@ Stolpersteine:
 
 1 -> 2 (kleine Pakete, lösen Floriansfall) -> 3 -> 4 (Grundlage für 5) -> 5 -> 6 -> 7. Notfall-Eingang separat einplanen.
 Vorher im Forum klären: KNX-Windalarm (Stufe 2), Haltezeit/Stufen-Rangfolge (Stufe 5), Handbedienung (Stufe 4).
+
+## Entwurf Stufe 2 — umgesetzt in 2.25.0 (lokal) (2026-10-24, nach Antworten #200 Florian und #202 Claus)
+
+Entschieden laut Forum: nach dem Sturm wird die Sperre nur aufgehoben, kein Nachholen. Sturmposition 100 %, Lamellen 100 %. Eigene Schwelle für Raffstores, Sperrzeit 20 min. Claus will zusätzlich einen Alarm-Binärsensor als Auslöser und eine allgemeine Sperr-Entität.
+
+### 2a – Raffstore-Sturm
+
+| Schlüssel | Vorgabe | Wirkung |
+| --- | --- | --- |
+| `storm_guard` | aus | Opt-in je Raffstore |
+| `storm_position` | 100 | Sturmposition (nicht `position_open`, das ist bei Raffstores unten) |
+| `storm_tilt` | 100 | Lamellen bei Sturm |
+
+**Auslöser: beide Möglichkeiten aus derselben Mechanik.** Der Wind-Slot kennt schon Binärsensor (on = Gefahr), Zahl mit Ein-/Ausschwelle und Textzustand (`guard_slot_danger`). Wind-Geschwindigkeit (Florian) und Alarm-Binärsensor (Claus) brauchen also keinen neuen Auswertungscode, nur einen eigenen Slot.
+
+- Neuer Slot `rwind` (Raffstore-Wind), global unter Einstellungen mit Sperrzeit 20 min, je Raffstore überschreibbar. **Nicht** `AWNING_GUARD_SLOTS` erweitern: die Markisenschleife würde den Slot sonst mitlaufen lassen.
+- `evaluate_guard` bekommt einen optionalen Parameter für die Slotliste (Vorgabe = bisherige Liste, Markisen unverändert).
+- Schleife in `async_enforce_guard` für die Opt-in-Raffstores; `has_guard()` bleibt unangetastet.
+- Wirkung bei Sturm: einmal je Gefahr auf `storm_position`/`storm_tilt` fahren (dringend, ohne Mindestabstand), `set_cover_sun_protected(..., False)`.
+- Sperre automatischer Fahrten, solange `barred`: Scheduler (auf/ab), Helligkeit (auf/ab), Beschattung, Nachholfahrt und Lüften über eine gemeinsame Abfrage `storm_barred(data, cover)`; Dienste und Dashboard-Knöpfe bleiben frei (Hand schlägt Automatik).
+- Toter Sensor: wie bei Markisen sofort gesperrt, Zwangsfahrt erst nach der Schonfrist.
+
+### 2b – Sperr-Entität (Claus)
+
+- Schlüssel `lock_entity` je Rollladen (`binary_sensor`, `switch`, `input_boolean`). `on` = Shutter Pilot sendet nichts Automatisches. Deckt den KNX-Aktor-Windalarm, Sperrobjekte und "Fensterputzen" ab.
+- Neue Funktion `automation_allowed()` = Automatik an **und** nicht gesperrt, in den Fahrt-Auslösern (Scheduler, Helligkeit, Beschattung, Lüften, Fenstertrigger-Reaktion). Nicht in `is_shutter_automation_enabled` selbst einbauen: der Fenstertrigger verwirft dort die Vormerkung (`window_trigger.py:240/275`).
+- Nach Aufhebung: nichts nachholen (ausreichend laut Claus), die nächste planmäßige Fahrt gilt.
+- Fahrtkontrolle: es wird nichts gesendet, also nichts zu prüfen.
+
+### Offene Entscheidungen
+
+1. Sturm sperrt nur die Automatik, Handfahrten bleiben frei (Empfehlung: ja).
+2. Sturm ignoriert Hauptschalter und Automatikschalter wie bei Markisen (Empfehlung: ja, ist Opt-in).
+3. Sturm fährt auch bei gesetzter Sperr-Entität hoch, und die Fahrtkontrolle zählt das nicht als Fehler (Empfehlung: ja; Claus' Aktor verriegelt sich selbst).
+4. Lamellen-Rückmeldung (2 % statt 0 %, kurz Lamellen 0 nach der Höhenfahrt): gehört zu Stufe 4, nicht hierher.
+
+### Bestandsschutz
+
+Neue Schlüssel mit Vorgabe aus, `AWNING_GUARD_SLOTS` und `has_guard()` unverändert, Markisenschleife unverändert, Tests wie bei Stufe 1 (Kontrollfälle ohne Haken, Gegenproben).

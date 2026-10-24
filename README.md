@@ -414,6 +414,18 @@ value from 50 % up becomes "fully extended" – that is logged once as a warning
 and named in the export.
 
 
+## Wind protection for venetian blinds
+
+Venetian blinds stand more wind than awnings but not unlimited wind, and what "safe" means is different: not `position_open` (usually the lowered position with open slats) but up, with open slats. So the protection is a separate, opt-in setting on the shutter, in the section *Wind protection venetian blind* (shown once slats are enabled):
+
+- **Wind protection for this blind** – off by default, nothing changes. On: when the wind sensor reports danger the blind drives to the **storm position** (default 100 %, slats 100 %) at once, bypassing the drive gap, the master switch and the automation switches – like the awning protection. While the storm lasts, **no automatic drive** starts for it (schedule, brightness, shading, ventilation, window contact). Hand drives, the dashboard buttons and the services stay possible. After the storm only the hold is lifted; nothing is caught up, the next planned drive applies.
+- **Wind sensor for blinds** – under *Settings*, separate from the awning wind sensor, so blinds can have their own threshold. Either a wind speed sensor with an on and an off threshold, or an **alarm binary sensor** (`on` = storm), for example the one your weather station already provides. A blind can name its own sensor instead of the global one. The lockout after the last alarm defaults to 20 minutes.
+- A sensor that reports nothing holds the blind from the first second and drives it up after the grace period, exactly like the awning protection.
+
+### Lock entity
+
+Any shutter can name a **lock entity** (`binary_sensor`, `switch` or `input_boolean`). While it is `on`, Shutter Pilot sends that cover nothing automatic – meant for an actuator's own wind lock or a "cleaning the windows" helper. Hand drives still work. The drive check does not count a locked cover as a failure and does not repeat the command. Nothing is caught up afterwards. An entity that is missing or unavailable does not lock. The wind protection still drives the blind up through a lock.
+
 ## Roof windows
 
 Since 2.20.0 there is a dedicated **Roof windows** tab. Behind it sits the very

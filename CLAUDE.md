@@ -48,7 +48,7 @@ custom_components/shutter_pilot/
   switch/sensor/binary_sensor.py   Entitäten
   services.py        Dienste (Gruppenaktionen)
   frontend/shutter-pilot-panel.js  Das komplette Panel (~4800 Z., ein File)
-tests/               pytest-Suite (871 Tests)
+tests/               pytest-Suite (891 Tests)
 tests/panel/         Panel in Node rendern – laeuft in der CI mit
 ```
 
@@ -97,6 +97,9 @@ aus = der Kontakt bewegt nichts, hält nur automatische Fahrten zurück) und
 `drive_after_close_up` (Vorgabe aus; hält auch die **Hochfahrt** zurück –
 bewusst nicht unter `drive_after_close`, das würde bestehenden Nutzern die
 Morgenfahrt nehmen).
+Windschutz für Raffstores (2.25.0, `storm_guard`, eigener Slot `rwind`) und
+Sperr-Entität (`automation_lock_entity`): beide Opt-in; die Abfrage steht in
+`shutter_held()` neben `is_shutter_automation_enabled()`.
 
 An einem Antrieb ohne Positionierung gibt es eine dritte Stellung: die am Motor
 angelernte **„My"-Position** (`my_position_entity` + `my_position_pct`, RTS über
@@ -285,7 +288,7 @@ Befehl dazu: **nicht vergessen**.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements-test.txt
-.venv/bin/pytest            # 871 Tests, ~21 s
+.venv/bin/pytest            # 891 Tests, ~21 s
 ```
 
 `.venv/` ist in `.gitignore`. In `pytest.ini` steht `-q` schon in `addopts` –
@@ -314,12 +317,54 @@ mich"), nicht als Commit-Log.
 
 ## Projektstand
 
-Version **2.24.0**, im Forum aktiv genutzt. Seit 18.10.2026 im
+Version **2.25.0**, im Forum aktiv genutzt. Seit 18.10.2026 im
 **HACS-Default-Store** (PR [hacs/default#9592](https://github.com/hacs/default/pull/9592), von frenck gemergt).
 
 ## Fortschritts-Log
 
 Vollständige Historie (ältere Einträge) steht in `docs/CHANGELOG_DEV.md` – hier nur die letzten fünf, damit diese Datei nicht wieder über das Kontextlimit wächst. Neuer Eintrag kommt hier dazu; wird die Liste hier zu lang, wandert der älteste nach `docs/CHANGELOG_DEV.md`.
+
+### 2026-10-24 – 2.25.0: Sturm für Raffstores und die Sperr-Entität (Stufe 2)
+
+Florian (#193) und Claus (#196, #202). Entwurf in `docs/PLAN_RAFFSTORE.md`,
+Entscheidungen bestätigt: Sturm sperrt nur die **Automatik** (Hand frei),
+ignoriert Haupt- und Automatikschalter wie bei Markisen, fährt auch durch
+eine Sperr-Entität hindurch.
+
+**2a Wind.** Opt-in `storm_guard` (Vorgabe aus), eigene Zielwerte
+`storm_position`/`storm_tilt` (100/100, **nicht** `position_open` – bei
+Raffstores unten). Eigener Slot `rwind` in `STORM_GUARD_SLOTS`, bewusst
+**nicht** in `AWNING_GUARD_SLOTS`: die Markisenschleife läuft über dieses
+Tupel. Dieselbe Slot-Mechanik, deshalb gehen Windgeschwindigkeit mit
+Hysterese (Florian) und Alarm-Binärsensor (Claus) ohne neuen
+Auswertungscode. `evaluate_guard`/`resolve_guard_config` bekamen einen
+`slots`-Parameter mit der alten Liste als Vorgabe; zweite Schleife in
+`async_enforce_guard`. `has_guard()` blieb unangetastet (rund 15 Stellen).
+Sturm sperrt über `shutter_held()` in Scheduler, Helligkeit, Beschattung,
+Lüften und Fenstertrigger; die Abfrage steht *neben*
+`is_shutter_automation_enabled`, nicht an ihrer Stelle – ein bestehender Test
+patcht den Namen in `brightness` (ein erster Versuch, ihn zu ersetzen, ließ
+genau diesen fallen).
+
+**2b Sperr-Entität.** `automation_lock_entity` je Rollladen, `on` = nichts
+Automatisches. Fail open (fehlende Entität sperrt nicht), keine Nachholung.
+`cover_verify._verify` wiederholt und meldet bei gesperrtem Cover nichts
+(Claus' Aktor verriegelt sich selbst). Der Fenstertrigger *behält* eine
+Vormerkung bei Sperre (anders als bei ausgeschalteter Automatik).
+
+**Panel/Export:** Abschnitt „Windschutz Raffstore" im Formular (sichtbar mit
+Lamellen), globaler Wind-Sensor für Raffstores unter Einstellungen,
+Sperr-Entität im Formular, i18n 13 neue Schlüssel ×11. Der Haken trägt die
+Vorgaben 100/100 selbst ein, sonst zeigte der Schieber 0 % und das Backend
+führe mit 100 %. Export: Windschutz-Tabelle und Sperr-Zeile.
+
+**Verifiziert:** `pytest` 891 grün (19 neue in
+`tests/test_raffstore_storm_and_lock.py`, 1 in `test_panel.py`). Gegenproben:
+ohne Sturmschleife fallen 5, ohne Sperr-Entität 1, ohne Sturmhalt 1, ohne
+Verify-Sperre 1; die Kontrollfälle (Haken aus, Markisen) bleiben grün.
+**Offen:** nicht im Browser und nicht im echten Home Assistant geprüft;
+Lamellen-Rückmeldung des KNX-Aktors (2 % statt 0 %, kurz Lamellen 0) ist
+Stufe 4.
 
 ### 2026-10-24 – 2.24.0: die Tür als Riegel, nicht als Antrieb (Raffstore, Stufe 1)
 
@@ -441,47 +486,6 @@ Rollladen-Override (heinzie, 2.23.1).
 
 **Verifiziert:** `pytest` grün (neuer Test in `tests/test_panel.py` prüft
 Schlüssel und Warnzeile im Panel). Nicht im Browser geprüft.
-
-### 2026-10-04 – 2.23.2: das Fenster, das den geparkten Rollladen nicht kannte
-
-Zwei Meldungen, ein Release. Bjoerg (smarthome #166), Export mit
-Nachträgen vom 30.9.–4.10., und Nils (simon42 #183, keine Codeänderung).
-
-**Fund 1 (Bjoerg, echter Fehler, nachgestellt): nach der Abendfahrt bei
-offenem Fenster reagierte „offen → gekippt" nicht.** Die Abendfahrt
-(`brightness._run_down`, `window_vent_while_open`) parkt den Rollladen auf
-95 % und merkt die Vollfahrt vor, startet aber keinen Fenstertrigger-Zyklus.
-Die Richtungsprüfung in `window_trigger.py` (soll tagsüber verhindern, dass
-ein Fenster einen offenen Rollladen herunterzieht) hielt ihn für offen: Ziel
-30 < 95, nicht geschlossen, kein Zyklus → `continue`. Nach „zu" und wieder
-„auf" lief ein Zyklus, danach ging gekippt – exakt sein Protokoll. Fix:
-`waiting_for_window` (Nachholfahrt vorgemerkt **und** `window_vent_while_open`)
-zählt wie ein aktiver Zyklus. Ohne den Haken bleibt es beim Stehenbleiben.
-
-**Fund 2 (Bjoerg, Mechanismus nachgestellt, sein Fall nicht bewiesen):
-Schlafzimmer morgens bei 30 %, Quelle „manual", blockiert das Hochfahren.**
-`cover_tracker` hielt eigene Fahrten nur 90 s als Automatik fest; jede
-spätere abweichende Positionsmeldung (31 statt 30, langsamer Antrieb,
-Reload) wurde als Handfahrt gebucht – Quelle `manual` und
-`forget_window_cycle`. Fix: Meldung innerhalb 3 % um das zuletzt gesendete Ziel
-(`commanded_position`) bleibt Automatik. Eine echte Handfahrt ist weiter
-manuell (eigener Test). **Offen:** sein Debug-Log (`Position saved (manual)`)
-würde zeigen, ob es wirklich dieser Weg war. Der Fall „Griff während der
-Fahrt zurück auf Auf, bleibt bei 30 %" ließ sich im Code nicht nachstellen
-(mit aktivem Zyklus kommt der Befehl 95 %) – vermutlich Folge von Fund 2 oder
-des Antriebs.
-
-**Nils (simon42 #183, keine Codeänderung):** zweistufiges Schließen (10 Lux →
-60 %, 22 Uhr → ganz zu) gibt es nicht; der Helligkeitsmodus fährt je Dunkel-
-Episode einmal. Der Rat „zwei Bereiche" geht nicht (ein Runter-Bereich je
-Rollladen, doppelter Cover wird abgelehnt). Umweg nur gelesen, nicht
-getestet: Zeitmodus 22:00 + Beschattung mit invertierter Lux-Bedingung,
-Zeitfenster, Position 60. Funktionswunsch notiert.
-
-**Verifiziert:** `pytest` 855 Tests grün (5 neue,
-`tests/test_window_parked_and_late_report.py`). Gegenprobe: Fixes entschärft →
-genau die zwei Fix-Tests fielen. Nicht im Browser geprüft – reine
-Backend-Logik.
 
 ## graphify
 

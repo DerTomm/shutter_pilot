@@ -49,6 +49,7 @@ from .helpers import (
     get_tilt_for_role,
     is_auto_enabled,
     is_shutter_automation_enabled,
+    shutter_held,
     is_sun_protect_enabled,
     resolve_shade_position,
     shade_release_opens,
@@ -345,7 +346,9 @@ async def setup_elevation_listener(hass: HomeAssistant, entry: ConfigEntry) -> N
             # release it. The sun protection flag keeps its value, so a
             # shutter that was shaded before is released properly once the
             # automation is switched back on.
-            if not is_shutter_automation_enabled(hass, entry, shutter):
+            if not is_shutter_automation_enabled(hass, entry, shutter) or shutter_held(
+                hass, entry, shutter
+            ):
                 continue
             # Taken out of the shading by hand, while the schedule keeps
             # running for it. Released like a condition that dropped out, not

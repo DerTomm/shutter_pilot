@@ -4,6 +4,26 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.25.0]
+
+### Neu
+- **Windschutz für Raffstores** (je Rollladen zuschaltbar, Vorgabe aus). Bei
+  Sturm fährt der Raffstore auf eine eigene Sturmposition (Vorgabe 100 %,
+  Lamellen 100 %) und startet danach keine automatische Fahrt, solange der
+  Sturm anhält. Eigener Wind-Sensor unter Einstellungen, getrennt von den
+  Markisen: wahlweise Windgeschwindigkeit mit eigener Schwelle oder ein
+  Alarm-Binärsensor der Wetterstation. Sperrzeit 20 Minuten. Nach dem Sturm
+  wird nur die Sperre aufgehoben.
+- **Sperr-Entität** je Rollladen (`binary_sensor`, `switch`, `input_boolean`).
+  Solange sie `on` ist, sendet Shutter Pilot diesem Cover nichts
+  Automatisches; die Fahrtkontrolle wertet das nicht als Fehler. Für die
+  Windsperre eines KNX-Aktors oder „Fenster putzen".
+- Der Export zeigt beides.
+
+**Was ändert sich für mich?** Nichts, solange du die Haken nicht setzt und
+keine Sperr-Entität einträgst. Die Markisen-Windeinstellungen bleiben
+unberührt.
+
 ## [2.24.0]
 
 ### Neu

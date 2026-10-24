@@ -4,6 +4,47 @@ Vollständiges Fortschritts-Log von Shutter Pilot, ausgelagert aus `CLAUDE.md`, 
 
 Bei Fragen zur Historie: hier nachlesen oder `grep`/`graphify` benutzen, bevor eine Vermutung über eine frühere Entscheidung geäußert wird.
 
+### 2026-10-04 – 2.23.2: das Fenster, das den geparkten Rollladen nicht kannte
+
+Zwei Meldungen, ein Release. Bjoerg (smarthome #166), Export mit
+Nachträgen vom 30.9.–4.10., und Nils (simon42 #183, keine Codeänderung).
+
+**Fund 1 (Bjoerg, echter Fehler, nachgestellt): nach der Abendfahrt bei
+offenem Fenster reagierte „offen → gekippt" nicht.** Die Abendfahrt
+(`brightness._run_down`, `window_vent_while_open`) parkt den Rollladen auf
+95 % und merkt die Vollfahrt vor, startet aber keinen Fenstertrigger-Zyklus.
+Die Richtungsprüfung in `window_trigger.py` (soll tagsüber verhindern, dass
+ein Fenster einen offenen Rollladen herunterzieht) hielt ihn für offen: Ziel
+30 < 95, nicht geschlossen, kein Zyklus → `continue`. Nach „zu" und wieder
+„auf" lief ein Zyklus, danach ging gekippt – exakt sein Protokoll. Fix:
+`waiting_for_window` (Nachholfahrt vorgemerkt **und** `window_vent_while_open`)
+zählt wie ein aktiver Zyklus. Ohne den Haken bleibt es beim Stehenbleiben.
+
+**Fund 2 (Bjoerg, Mechanismus nachgestellt, sein Fall nicht bewiesen):
+Schlafzimmer morgens bei 30 %, Quelle „manual", blockiert das Hochfahren.**
+`cover_tracker` hielt eigene Fahrten nur 90 s als Automatik fest; jede
+spätere abweichende Positionsmeldung (31 statt 30, langsamer Antrieb,
+Reload) wurde als Handfahrt gebucht – Quelle `manual` und
+`forget_window_cycle`. Fix: Meldung innerhalb 3 % um das zuletzt gesendete Ziel
+(`commanded_position`) bleibt Automatik. Eine echte Handfahrt ist weiter
+manuell (eigener Test). **Offen:** sein Debug-Log (`Position saved (manual)`)
+würde zeigen, ob es wirklich dieser Weg war. Der Fall „Griff während der
+Fahrt zurück auf Auf, bleibt bei 30 %" ließ sich im Code nicht nachstellen
+(mit aktivem Zyklus kommt der Befehl 95 %) – vermutlich Folge von Fund 2 oder
+des Antriebs.
+
+**Nils (simon42 #183, keine Codeänderung):** zweistufiges Schließen (10 Lux →
+60 %, 22 Uhr → ganz zu) gibt es nicht; der Helligkeitsmodus fährt je Dunkel-
+Episode einmal. Der Rat „zwei Bereiche" geht nicht (ein Runter-Bereich je
+Rollladen, doppelter Cover wird abgelehnt). Umweg nur gelesen, nicht
+getestet: Zeitmodus 22:00 + Beschattung mit invertierter Lux-Bedingung,
+Zeitfenster, Position 60. Funktionswunsch notiert.
+
+**Verifiziert:** `pytest` 855 Tests grün (5 neue,
+`tests/test_window_parked_and_late_report.py`). Gegenprobe: Fixes entschärft →
+genau die zwei Fix-Tests fielen. Nicht im Browser geprüft – reine
+Backend-Logik.
+
 ### 2026-09-20 – 2.23.1: die Abendfahrt, die kein Ende kannte
 
 Drei Meldungen, eine Codeänderung. Reihenfolge wie immer: erst nachrechnen,

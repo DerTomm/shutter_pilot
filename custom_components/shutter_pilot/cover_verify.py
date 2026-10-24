@@ -117,7 +117,7 @@ async def _verify(
     reason: str,
 ) -> None:
     # Imported here: helpers imports this module for set_cover_position.
-    from .helpers import mark_automation_pending
+    from .helpers import find_shutter_by_cover, is_shutter_locked, mark_automation_pending
     from .position_store import SOURCE_AUTOMATION, get_position_store
 
     wait = _opt_int(entry, CONF_VERIFY_AFTER, DEFAULT_VERIFY_AFTER, 5, 600)
@@ -131,6 +131,14 @@ async def _verify(
             actual = _current_position(hass, entity_id)
             if actual is None:
                 _LOGGER.debug("%s unavailable during verification", entity_id)
+                return
+            # A cover whose lock entity is on is held by something else - the
+            # actuator's own wind lock, say. It not reaching the target is the
+            # lock doing its job, not a failed drive, and repeating the command
+            # would only fight it.
+            held = find_shutter_by_cover(entry, entity_id)
+            if held is not None and is_shutter_locked(hass, held):
+                _LOGGER.debug("%s is locked – not verifying", entity_id)
                 return
             if abs(actual - target) <= tolerance:
                 if attempt:

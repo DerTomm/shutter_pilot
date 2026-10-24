@@ -167,6 +167,26 @@ def test_sun_bound_zero_is_explained_in_the_panel() -> None:
     assert '!==""' in warn.group(1) and "!=null" in warn.group(1)
 
 
+def test_storm_and_lock_fields_are_in_the_panel() -> None:
+    """Windschutz fuer Raffstores und Sperr-Entitaet (2.25.0)."""
+    root = Path(__file__).parent.parent / "custom_components/shutter_pilot"
+    text = (root / "frontend/shutter-pilot-panel.js").read_text(encoding="utf-8")
+    for key in ("sec_storm", "sec_storm_sub", "f_storm_guard", "f_storm_guard_hint",
+                "f_storm_position", "f_storm_tilt", "f_guard_rwind",
+                "f_guard_lockout_hint_rwind", "sec_rwind", "sec_rwind_sub",
+                "f_rwind_intro", "f_lock_entity", "f_lock_entity_hint"):
+        assert text.count(f"{key}:") == 11, key
+    # Der Haken traegt die Vorgabe selbst ein: der Schieber zeigt sonst 0 %,
+    # waehrend das Backend mit 100 % faehrt.
+    assert "s.storm_position=100" in text and "s.storm_tilt=100" in text
+    for name in ("AWNING_UNUSED_KEYS", "WINDOW_UNUSED_KEYS"):
+        block = re.search(rf"const {name} = \[(.*?)\];", text, re.S)
+        assert block, name
+        for key in ("storm_guard", "storm_position", "storm_tilt",
+                    "automation_lock_entity"):
+            assert f'"{key}"' in block.group(1), (name, key)
+
+
 def test_door_lock_hooks_are_in_the_form_and_the_unused_key_lists() -> None:
     """`window_react` und `drive_after_close_up` (Raffstore, Florian/Claus).
 

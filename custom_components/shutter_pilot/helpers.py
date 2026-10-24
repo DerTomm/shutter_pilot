@@ -74,6 +74,9 @@ from .const import (
     DEFAULT_AWNING_TRACK_LOW_POS,
     DEFAULT_AWNING_TRACK_STEP,
     DEFAULT_DEVICE_KIND,
+    AWNING_GUARD_STATE_KEY,
+    CONF_AUTOMATION_LOCK_ENTITY,
+    CONF_STORM_GUARD,
     KIND_AWNING,
     KIND_SHUTTER,
     KIND_WINDOW,
@@ -220,6 +223,75 @@ def is_shutter_automation_enabled(
             return str(state.state).lower() in ("on", "true", "1")
 
     return bool(shutter.get(CONF_SHUTTER_AUTOMATION_ENABLED, True))
+
+
+def is_shutter_locked(hass: HomeAssistant, shutter: dict) -> bool:
+    """True while this cover's lock entity says "on".
+
+    Fails open like the shutter switch: an entity that is missing or reports
+    unavailable must not stop the automation, the usual case is a lock that
+    was never configured.
+    """
+    entity_id = str(shutter.get(CONF_AUTOMATION_LOCK_ENTITY) or "").strip()
+    if not entity_id:
+        return False
+    state = hass.states.get(entity_id)
+    return state is not None and str(state.state).lower() in ("on", "true", "1")
+
+
+def has_storm_guard(shutter: dict) -> bool:
+    """True for a venetian blind that opted in to the wind protection.
+
+    Not has_guard(): that one is asked at about fifteen places that lift the
+    lock-out protection, block the group services and clamp targets for awnings
+    and roof windows. A blind joining it would take all of that along.
+    """
+    return is_shutter(shutter) and bool(shutter.get(CONF_STORM_GUARD, False))
+
+
+def only_storm_guarded(shutters: list[Any]) -> list[Any]:
+    """The blinds the wind protection watches."""
+    return [s for s in shutters if isinstance(s, dict) and has_storm_guard(s)]
+
+
+def storm_barred(hass: HomeAssistant, entry: ConfigEntry, shutter: dict) -> bool:
+    """True while the wind protection holds this blind (alarm, lockout, dead sensor)."""
+    if not has_storm_guard(shutter):
+        return False
+    cover = str(shutter.get(CONF_COVER_ENTITY_ID) or "").strip()
+    data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if not cover or not isinstance(data, dict):
+        return False
+    states = data.get(AWNING_GUARD_STATE_KEY)
+    if not isinstance(states, dict):
+        return False
+    return bool((states.get(cover) or {}).get("barred"))
+
+
+def shutter_held(hass: HomeAssistant, entry: ConfigEntry, shutter: dict) -> bool:
+    """True if the lock entity or the wind protection holds this cover.
+
+    Separate from is_shutter_automation_enabled() on purpose: that one is
+    patched by name in the existing tests, and the drive paths keep calling it
+    exactly as before - the hold is one more question next to it.
+    """
+    return is_shutter_locked(hass, shutter) or storm_barred(hass, entry, shutter)
+
+
+def automation_allowed(
+    hass: HomeAssistant, entry: ConfigEntry, shutter: dict
+) -> bool:
+    """May the automation start a drive for this cover right now?
+
+    The shutter switch, the lock entity and the wind protection, in one
+    question. Asked where a drive *starts* (schedule, brightness, shading,
+    ventilation, window contact) and nowhere else: hand drives never ask, and
+    neither does the wind protection's own forced drive - a lock must not keep
+    a blind in the storm.
+    """
+    return is_shutter_automation_enabled(
+        hass, entry, shutter
+    ) and not shutter_held(hass, entry, shutter)
 
 
 def is_sun_protect_enabled(
