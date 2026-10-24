@@ -115,7 +115,7 @@ const AWNING_UNUSED_KEYS = ["area_up_id","position_closed","position_closed_alt"
   "position_closed_frost","window_entity_id","window_entity_id_2","window_open_state",
   "window_tilted_state","window_tilted_entity_id","window_tilted_entity_state",
   "position_when_window_open","position_when_window_tilted","lock_protection",
-  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close",
+  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close","drive_after_close_up","window_react",
   "tilt_enabled","tilt_open","tilt_closed","tilt_sun_protect"];
 /* Dasselbe fuer das Dachfenster. Es behaelt `position_closed` – zu ist dort
    die Ruhestellung –, verliert aber die Fensterkontakt-Schluessel: der Cover
@@ -124,7 +124,7 @@ const WINDOW_UNUSED_KEYS = ["area_up_id","position_closed_alt",
   "position_closed_frost","window_entity_id","window_entity_id_2","window_open_state",
   "window_tilted_state","window_tilted_entity_id","window_tilted_entity_state",
   "position_when_window_open","position_when_window_tilted","lock_protection",
-  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close",
+  "min_position_when_open","window_close_debounce","window_vent_while_open","drive_after_close","drive_after_close_up","window_react",
   "tilt_enabled","tilt_open","tilt_closed","tilt_sun_protect"];
 
 /* Vorfilterung je Feld. `classes` prüft device_class, `pattern` den
@@ -399,6 +399,7 @@ de:{
   f_min_pos:"Mindest-Position wenn Tür offen",
   f_area_up:"Bereich (Hoch)",f_area_down:"Bereich (Runter)",
   f_pos_open:"Position Offen",f_pos_closed:"Position Geschlossen",f_pos_sun:"Sonnenschutz-Position",
+  f_window_react:"Fensterkontakt fährt den Rollladen",f_window_react_hint:"Aus: Der Kontakt bewegt nichts, auch nicht auf Lüftungs- oder Kippposition. Er dient nur als Riegel: Automatische Fahrten werden bei offenem Fenster zurückgehalten (mit Nachholen) und nach dem Schließen ausgeführt. Sinnvoll für Türen und Raffstores.",f_drive_after_up:"Auch das Hochfahren nachholen",f_drive_after_up_hint:"Ist die Hochfahrt (Zeit oder Helligkeit) fällig, das Fenster aber offen oder gekippt, wird sie nach dem Schließen ausgeführt, samt Lamellenwinkel. Sinnvoll, wenn auf und zu dieselbe Position haben (Raffstore). Unabhängig vom Haken Nachholen.",
   f_drive_after:"Nachholen wenn Fenster offen oder gekippt",
   f_drive_after_hint:"Wenn die Schließzeit erreicht wird, das Fenster aber offen oder gekippt ist, wird die Fahrt nachgeholt, sobald es geschlossen wird. Ohne den Haken darunter fährt der Rollladen bis dahin gar nicht.",
   f_win_debounce:"Verzögerung beim Schließen (Sek.)",f_win_debounce_hint:"Beim Drehen des Griffs von „gekippt“ auf „offen“ meldet der Kontakt kurz „geschlossen“. So lange muss „geschlossen“ anhalten, bevor der Rollladen zurückfährt. 0 = sofort reagieren.",
@@ -761,6 +762,7 @@ en:{
   f_min_pos:"Minimum position when door open",
   f_area_up:"Area (Up)",f_area_down:"Area (Down)",
   f_pos_open:"Position Open",f_pos_closed:"Position Closed",f_pos_sun:"Sun protection position",
+  f_window_react:"Window contact drives the shutter",f_window_react_hint:"Off: the contact moves nothing, not even to the ventilation or tilt position. It only acts as a lock: automatic drives are held back while the window is open (with catch-up) and run after it closes. Useful for doors and venetian blinds.",f_drive_after_up:"Catch up opening too",f_drive_after_up_hint:"When an opening drive (time or brightness) is due but the window is open or tilted, it runs after the window closes, slat angle included. Useful when open and closed share the same position (venetian blind). Independent of the catch-up option above.",
   f_drive_after:"Catch up when window open or tilted",
   f_drive_after_hint:"When close time is reached but the window is open or tilted, the drive is executed as soon as it is closed. Without the checkbox below, the shutter does not move at all until then.",
   f_win_debounce:"Close delay (sec.)",f_win_debounce_hint:"Turning the handle from tilted to open makes the contact report \"closed\" for a moment. This is how long \"closed\" has to hold before the shutter drives back. 0 = react immediately.",
@@ -1067,6 +1069,7 @@ fr:{
   f_lock:"Protection anti-enfermement",f_min_pos:"Position min. porte ouverte",
   f_area_up:"Zone (Montée)",f_area_down:"Zone (Descente)",
   f_pos_open:"Position Ouvert",f_pos_closed:"Position Fermé",f_pos_sun:"Position protection solaire",
+  f_window_react:"Le contact fait bouger le volet",f_window_react_hint:"Désactivé : le contact ne déplace rien, pas même vers la position d'aération ou d'entrebâillement. Il sert seulement de verrou : les mouvements automatiques sont retenus tant que la fenêtre est ouverte (avec rattrapage) et exécutés à la fermeture. Utile pour les portes et les stores à lamelles.",f_drive_after_up:"Rattraper aussi l'ouverture",f_drive_after_up_hint:"Si l'ouverture (heure ou luminosité) est due alors que la fenêtre est ouverte ou entrebâillée, elle est exécutée à la fermeture, angle des lamelles compris. Utile quand ouvert et fermé ont la même position (store à lamelles). Indépendant de l'option de rattrapage ci-dessus.",
   f_drive_after:"Rattraper si fenêtre ouverte ou entrebâillée",f_drive_after_hint:"Si l'heure de fermeture arrive alors que la fenêtre est ouverte ou entrebâillée, la course est rattrapée dès sa fermeture. Sans l'option ci-dessous, le volet ne bouge pas du tout jusque-là.",
   f_win_debounce:"Délai à la fermeture (sec.)",f_win_debounce_hint:"Durée pendant laquelle « fermé » doit se maintenir avant le retour du volet. 0 = immédiat.",
   pick_entity:"Sélectionner…",confirm_del_area:"Supprimer la zone \"{id}\" ?",confirm_del_shutter:"Supprimer le volet ?",
@@ -1371,6 +1374,7 @@ es:{
   f_lock:"Protección anti-bloqueo",f_min_pos:"Posición mín. puerta abierta",
   f_area_up:"Zona (Subida)",f_area_down:"Zona (Bajada)",
   f_pos_open:"Posición Abierta",f_pos_closed:"Posición Cerrada",f_pos_sun:"Posición protección solar",
+  f_window_react:"El contacto mueve la persiana",f_window_react_hint:"Desactivado: el contacto no mueve nada, ni siquiera a la posición de ventilación o abatible. Solo actúa como bloqueo: los movimientos automáticos se retienen mientras la ventana está abierta (con recuperación) y se ejecutan al cerrarla. Útil para puertas y persianas venecianas.",f_drive_after_up:"Recuperar también la subida",f_drive_after_up_hint:"Si toca subir (hora o luminosidad) y la ventana está abierta o basculante, se ejecuta al cerrarla, con el ángulo de las lamas. Útil cuando abierto y cerrado tienen la misma posición (persiana veneciana). Independiente de la opción de recuperación anterior.",
   f_drive_after:"Recuperar si ventana abierta o basculante",f_drive_after_hint:"Si llega la hora de cierre con la ventana abierta o basculante, el recorrido se ejecuta en cuanto se cierre. Sin la opción de abajo, la persiana no se mueve nada hasta entonces.",
   f_win_debounce:"Retardo al cerrar (seg.)",f_win_debounce_hint:"Tiempo que debe mantenerse «cerrado» antes de que la persiana vuelva. 0 = inmediato.",
   pick_entity:"Seleccionar…",confirm_del_area:"¿Eliminar zona \"{id}\"?",confirm_del_shutter:"¿Eliminar persiana?",
@@ -1675,6 +1679,7 @@ it:{
   f_lock:"Protezione anti-blocco",f_min_pos:"Posizione min. porta aperta",
   f_area_up:"Zona (Su)",f_area_down:"Zona (Giù)",
   f_pos_open:"Posizione Aperta",f_pos_closed:"Posizione Chiusa",f_pos_sun:"Posizione protezione solare",
+  f_window_react:"Il contatto muove la tapparella",f_window_react_hint:"Disattivato: il contatto non muove nulla, nemmeno verso la posizione di aerazione o vasistas. Funziona solo da blocco: i movimenti automatici sono trattenuti finché la finestra è aperta (con recupero) ed eseguiti alla chiusura. Utile per porte e frangisole.",f_drive_after_up:"Recupera anche l'apertura",f_drive_after_up_hint:"Se l'apertura (orario o luminosità) è dovuta ma la finestra è aperta o a vasistas, viene eseguita alla chiusura, con l'angolo delle lamelle. Utile quando aperto e chiuso hanno la stessa posizione (frangisole). Indipendente dall'opzione di recupero sopra.",
   f_drive_after:"Recupera se finestra aperta o a vasistas",f_drive_after_hint:"Se arriva l'ora di chiusura con la finestra aperta o a vasistas, la corsa viene recuperata appena la finestra si chiude. Senza l'opzione qui sotto la tapparella non si muove affatto fino ad allora.",
   f_win_debounce:"Ritardo alla chiusura (sec.)",f_win_debounce_hint:"Per quanto tempo deve permanere «chiuso» prima che la tapparella torni indietro. 0 = subito.",
   pick_entity:"Seleziona…",confirm_del_area:"Eliminare zona \"{id}\"?",confirm_del_shutter:"Eliminare tapparella?",
@@ -1980,6 +1985,7 @@ nl:{
   f_lock:"Buitensluitbeveiliging (voorkomt volledig sluiten bij open deur)",f_min_pos:"Minimumpositie bij open deur",
   f_area_up:"Zone (Omhoog)",f_area_down:"Zone (Omlaag)",
   f_pos_open:"Positie Open",f_pos_closed:"Positie Gesloten",f_pos_sun:"Zonweringpositie",
+  f_window_react:"Raamcontact bestuurt het rolluik",f_window_react_hint:"Uit: het contact beweegt niets, ook niet naar de ventilatie- of kiepstand. Het werkt alleen als vergrendeling: automatische ritten worden vastgehouden zolang het raam open is (met inhalen) en uitgevoerd na het sluiten. Handig voor deuren en lamellenschermen.",f_drive_after_up:"Ook openen inhalen",f_drive_after_up_hint:"Is een open-rit (tijd of helderheid) aan de beurt terwijl het raam open of gekiept is, dan wordt die na het sluiten uitgevoerd, inclusief lamelhoek. Handig als open en dicht dezelfde positie hebben (lamellenscherm). Los van de inhaaloptie hierboven.",
   f_drive_after:"Inhalen als raam open of gekiept",f_drive_after_hint:"Als de sluitingstijd bereikt wordt maar het raam open of gekiept staat, wordt de rit ingehaald zodra het raam gesloten wordt. Zonder het vinkje hieronder beweegt het rolluik tot dan helemaal niet.",
   f_win_debounce:"Vertraging bij sluiten (sec.)",f_win_debounce_hint:"Hoe lang «gesloten» moet aanhouden voordat het rolluik terugkeert. 0 = direct.",
   pick_entity:"Entiteit selecteren…",confirm_del_area:"Zone \"{id}\" echt verwijderen?",confirm_del_shutter:"Rolluik echt verwijderen?",
@@ -2285,6 +2291,7 @@ da:{
   f_lock:"Låsebeskyttelse",f_min_pos:"Minimumposition ved åben dør",
   f_area_up:"Område (Op)",f_area_down:"Område (Ned)",
   f_pos_open:"Position Åben",f_pos_closed:"Position Lukket",f_pos_sun:"Solbeskyttelsesposition",
+  f_window_react:"Vindueskontakt kører rullegardinet",f_window_react_hint:"Fra: kontakten flytter intet, heller ikke til udluftnings- eller klemposition. Den virker kun som lås: automatiske kørsler holdes tilbage, mens vinduet er åbent (med indhentning), og udføres efter lukning. Nyttigt til døre og lamelgardiner.",f_drive_after_up:"Indhent også åbning",f_drive_after_up_hint:"Hvis en åbnekørsel (tid eller lysstyrke) er forfalden, men vinduet er åbent eller på klem, udføres den efter lukning inklusive lamelvinkel. Nyttigt når åben og lukket har samme position (lamelgardin). Uafhængig af indhentningsvalget ovenfor.",
   f_drive_after:"Indhent hvis vindue åbent eller på klem",f_drive_after_hint:"Hvis lukketiden nås, mens vinduet står åbent eller på klem, indhentes kørslen, så snart vinduet lukkes. Uden fluebenet nedenfor bevæger rullegardinet sig slet ikke indtil da.",
   f_win_debounce:"Forsinkelse ved lukning (sek.)",f_win_debounce_hint:"Hvor længe «lukket» skal holde, før rullegardinet kører tilbage. 0 = med det samme.",
   pick_entity:"Vælg entitet…",confirm_del_area:"Slet område \"{id}\"?",confirm_del_shutter:"Slet persienne?",
@@ -2590,6 +2597,7 @@ sv:{
   f_lock:"Utelåsningsskydd",f_min_pos:"Minimiposition vid öppen dörr",
   f_area_up:"Område (Upp)",f_area_down:"Område (Ner)",
   f_pos_open:"Position Öppen",f_pos_closed:"Position Stängd",f_pos_sun:"Solskyddsposition",
+  f_window_react:"Fönsterkontakten kör rullgardinen",f_window_react_hint:"Av: kontakten flyttar ingenting, inte heller till vädrings- eller glänt-läge. Den fungerar bara som spärr: automatiska körningar hålls tillbaka medan fönstret är öppet (med hämtning) och utförs efter stängning. Bra för dörrar och persienner.",f_drive_after_up:"Hämta även öppning",f_drive_after_up_hint:"Om en öppningskörning (tid eller ljusstyrka) är aktuell men fönstret är öppet eller på glänt, utförs den efter stängning inklusive lamellvinkel. Bra när öppet och stängt har samma position (persienn). Oberoende av hämtningsvalet ovan.",
   f_drive_after:"Hämta om fönster öppet eller på glänt",f_drive_after_hint:"Om stängningstiden nås medan fönstret står öppet eller på glänt körs körningen i kapp så snart fönstret stängs. Utan bocken nedanför rör sig persiennen inte alls fram till dess.",
   f_win_debounce:"Fördröjning vid stängning (sek.)",f_win_debounce_hint:"Hur länge «stängt» måste hålla innan jalusin åker tillbaka. 0 = direkt.",
   pick_entity:"Välj entitet…",confirm_del_area:"Ta bort område \"{id}\"?",confirm_del_shutter:"Ta bort persienn?",
@@ -2895,6 +2903,7 @@ pl:{
   f_lock:"Blokada bezpieczeństwa",f_min_pos:"Minimalna pozycja przy otwartych drzwiach",
   f_area_up:"Strefa (W górę)",f_area_down:"Strefa (W dół)",
   f_pos_open:"Pozycja Otwarta",f_pos_closed:"Pozycja Zamknięta",f_pos_sun:"Pozycja osłony słonecznej",
+  f_window_react:"Kontaktron steruje roletą",f_window_react_hint:"Wyłączone: kontaktron niczego nie porusza, także do pozycji wietrzenia lub uchylenia. Działa tylko jako blokada: automatyczne przejazdy są wstrzymywane, gdy okno jest otwarte (z nadrabianiem), i wykonywane po zamknięciu. Przydatne dla drzwi i żaluzji.",f_drive_after_up:"Nadrabiaj także otwieranie",f_drive_after_up_hint:"Jeśli otwarcie (czas lub jasność) jest należne, a okno jest otwarte lub uchylone, zostanie wykonane po zamknięciu, wraz z kątem lamel. Przydatne, gdy otwarte i zamknięte mają tę samą pozycję (żaluzja). Niezależne od opcji nadrabiania powyżej.",
   f_drive_after:"Nadrobić gdy okno otwarte lub uchylone",f_drive_after_hint:"Jeśli pora zamknięcia nadejdzie przy oknie otwartym lub uchylonym, przejazd zostanie nadrobiony zaraz po zamknięciu okna. Bez opcji poniżej roleta do tego czasu w ogóle się nie porusza.",
   f_win_debounce:"Opóźnienie przy zamykaniu (sek.)",f_win_debounce_hint:"Jak długo musi utrzymać się stan „zamknięte”, zanim roleta wróci. 0 = natychmiast.",
   pick_entity:"Wybierz encję…",confirm_del_area:"Usunąć strefę \"{id}\"?",confirm_del_shutter:"Usunąć roletę?",
@@ -3200,6 +3209,7 @@ pt:{
   f_lock:"Proteção anti-bloqueio",f_min_pos:"Posição mín. porta aberta",
   f_area_up:"Zona (Subir)",f_area_down:"Zona (Descer)",
   f_pos_open:"Posição Aberta",f_pos_closed:"Posição Fechada",f_pos_sun:"Posição proteção solar",
+  f_window_react:"O contacto move o estore",f_window_react_hint:"Desligado: o contacto não move nada, nem para a posição de ventilação ou basculante. Funciona apenas como bloqueio: os movimentos automáticos ficam retidos enquanto a janela está aberta (com recuperação) e são executados ao fechar. Útil para portas e estores venezianos.",f_drive_after_up:"Recuperar também a abertura",f_drive_after_up_hint:"Se uma abertura (hora ou luminosidade) estiver pendente e a janela estiver aberta ou basculante, é executada ao fechar, com o ângulo das lâminas. Útil quando aberto e fechado têm a mesma posição (estore veneziano). Independente da opção de recuperação acima.",
   f_drive_after:"Recuperar se janela aberta ou basculante",f_drive_after_hint:"Se a hora de fecho chegar com a janela aberta ou basculante, o percurso é recuperado assim que a janela for fechada. Sem a opção abaixo o estore não se move de todo até lá.",
   f_win_debounce:"Atraso ao fechar (seg.)",f_win_debounce_hint:"Quanto tempo «fechado» tem de se manter antes de o estore recuar. 0 = imediato.",
   pick_entity:"Selecionar entidade…",confirm_del_area:"Eliminar zona \"{id}\"?",confirm_del_shutter:"Eliminar estore?",
@@ -3505,6 +3515,7 @@ nb:{
   f_lock:"Utestengingsbeskyttelse",f_min_pos:"Minimumsposisjon ved åpen dør",
   f_area_up:"Område (Opp)",f_area_down:"Område (Ned)",
   f_pos_open:"Posisjon Åpen",f_pos_closed:"Posisjon Lukket",f_pos_sun:"Solbeskyttelsesposisjon",
+  f_window_react:"Vinduskontakten kjører rullegardinen",f_window_react_hint:"Av: kontakten flytter ingenting, heller ikke til luftings- eller gløttposisjon. Den virker bare som lås: automatiske kjøringer holdes tilbake mens vinduet er åpent (med igjentaking) og utføres etter lukking. Nyttig for dører og lamellgardiner.",f_drive_after_up:"Ta igjen åpning også",f_drive_after_up_hint:"Hvis en åpnekjøring (tid eller lysstyrke) er forfalt, men vinduet er åpent eller på gløtt, utføres den etter lukking, inkludert lamellvinkel. Nyttig når åpen og lukket har samme posisjon (lamellgardin). Uavhengig av valget om igjentaking ovenfor.",
   f_drive_after:"Ta igjen hvis vindu åpent eller på gløtt",f_drive_after_hint:"Hvis lukketiden nås mens vinduet står åpent eller på gløtt, tas kjøringen igjen så snart vinduet lukkes. Uten haken nedenfor beveger rullegardinen seg ikke i det hele tatt fram til da.",
   f_win_debounce:"Forsinkelse ved lukking (sek.)",f_win_debounce_hint:"Hvor lenge «lukket» må holde før rullegardinen kjører tilbake. 0 = umiddelbart.",
   pick_entity:"Velg entitet…",confirm_del_area:"Slette område \"{id}\"?",confirm_del_shutter:"Slette persienne?",
@@ -5785,10 +5796,14 @@ class ShutterPilotPanel extends PanelBase {
            aussehen, und der eingestellte Wert kam nie zum Zug. */
         : html`${pct("position_when_window_tilted",T("f_pos_win_2state"))}
                <div class="hint">${T("f_pos_win_tilt_2state_hint")}</div>`}
+      <div class="field"><label><input type="checkbox" .checked=${s.window_react!==false} @change=${e=>{s.window_react=e.target.checked;this.requestUpdate();}}> ${T("f_window_react")}</label>
+        <div class="hint">${T("f_window_react_hint")}</div></div>
       <div class="field"><label><input type="checkbox" .checked=${!!s.lock_protection} @change=${e=>{s.lock_protection=e.target.checked;this.requestUpdate();}}> ${T("f_lock")}</label></div>
       ${s.lock_protection?pct("min_position_when_open",T("f_min_pos")):""}
       <div class="field"><label><input type="checkbox" .checked=${!!s.drive_after_close} @change=${e=>{s.drive_after_close=e.target.checked;this.requestUpdate();}}> ${T("f_drive_after")}</label>
         <div class="hint">${T("f_drive_after_hint")}</div></div>
+      <div class="field"><label><input type="checkbox" .checked=${!!s.drive_after_close_up} @change=${e=>{s.drive_after_close_up=e.target.checked;this.requestUpdate();}}> ${T("f_drive_after_up")}</label>
+        <div class="hint">${T("f_drive_after_up_hint")}</div></div>
       ${/* Ohne diesen Haken passiert bei offenem Fenster gar nichts – auch
            nicht die Teilfahrt, die der Fensterkontakt gefahren haette. Genau
            so gemeldet: "im Schlafzimmer hat sich gar nichts bewegt". Er steht

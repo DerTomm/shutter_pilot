@@ -165,3 +165,23 @@ def test_sun_bound_zero_is_explained_in_the_panel() -> None:
     assert warn, "die Warnung bei einer ausdruecklichen 0 fehlt"
     # leer darf nicht warnen: "" und null muessen vorher ausgeschlossen sein
     assert '!==""' in warn.group(1) and "!=null" in warn.group(1)
+
+
+def test_door_lock_hooks_are_in_the_form_and_the_unused_key_lists() -> None:
+    """`window_react` und `drive_after_close_up` (Raffstore, Florian/Claus).
+
+    Das Formular bietet beide an, Markise und Dachfenster loeschen sie beim
+    Umwandeln (sonst bleiben sie gespeichert, sichtbar und wirkungslos), und
+    das Panel spiegelt die Listen in const.py."""
+    root = Path(__file__).parent.parent / "custom_components/shutter_pilot"
+    text = (root / "frontend/shutter-pilot-panel.js").read_text(encoding="utf-8")
+    for key in ("f_window_react", "f_window_react_hint", "f_drive_after_up",
+                "f_drive_after_up_hint"):
+        assert text.count(f"{key}:") == 11, key
+    assert "s.window_react!==false" in text  # Vorgabe an, wie bisher
+    assert "s.drive_after_close_up" in text
+    for name in ("AWNING_UNUSED_KEYS", "WINDOW_UNUSED_KEYS"):
+        block = re.search(rf"const {name} = \[(.*?)\];", text, re.S)
+        assert block, name
+        assert '"drive_after_close_up"' in block.group(1), name
+        assert '"window_react"' in block.group(1), name

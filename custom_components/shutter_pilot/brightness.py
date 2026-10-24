@@ -52,6 +52,7 @@ from .const import (
     CONF_AREA_UP_ID,
     CONF_AREA_DOWN_ID,
     CONF_DRIVE_AFTER_CLOSE,
+    CONF_DRIVE_AFTER_CLOSE_UP,
     ROLE_CLOSED,
     ROLE_OPEN,
 )
@@ -398,6 +399,24 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
                 continue
             pos = get_position_for_role(shutter, ROLE_OPEN)
             tilt = get_tilt_for_role(shutter, ROLE_OPEN)
+            # Wie im Scheduler: erst nach should_skip_automated_up, eigener
+            # Haken. Die Fahrt gilt als beschlossen und wartet nur aufs Fenster.
+            if shutter.get(CONF_DRIVE_AFTER_CLOSE_UP, False) and (
+                is_window_open_or_tilted(hass, shutter)
+            ):
+                remember_drive_after_close(
+                    hass, entry, data, cover_entity,
+                    position=pos, tilt=tilt, reason=reason, shutter=shutter,
+                )
+                if episode is not None:
+                    up_fired[cover_entity] = episode
+                covers_driven_up.add(cover_entity)
+                covers_driven_down.discard(cover_entity)
+                _LOGGER.info(
+                    "Brightness up: %s Fenster offen – Hochfahrt wird nach Schließen ausgeführt",
+                    cover_entity,
+                )
+                continue
             _LOGGER.info("Brightness up: driving %s -> %d%%", cover_entity, pos)
             if episode is not None:
                 up_fired[cover_entity] = episode

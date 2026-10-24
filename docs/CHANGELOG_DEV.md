@@ -4,6 +4,79 @@ Vollständiges Fortschritts-Log von Shutter Pilot, ausgelagert aus `CLAUDE.md`, 
 
 Bei Fragen zur Historie: hier nachlesen oder `grep`/`graphify` benutzen, bevor eine Vermutung über eine frühere Entscheidung geäußert wird.
 
+### 2026-09-20 – 2.23.1: die Abendfahrt, die kein Ende kannte
+
+Drei Meldungen, eine Codeänderung. Reihenfolge wie immer: erst nachrechnen,
+dann Reproduktionstest, dann Code.
+
+**Fund (Linos, simon42 #167, echter Fehler): abends alle zu, einer per
+Wandschalter geöffnet, kurz darauf von Shutter Pilot wieder geschlossen –
+über das Dashboard geöffnet bleibt er offen.** Sein Export: alle fünf
+Bereiche im Helligkeitsmodus, `lux_down 40`, Runter-Fenster 16:00–22:00,
+`manual_override never`. Nachgerechnet: `cover_tracker` erkennt die
+Handfahrt und ruft `note_manual_position(…, 100)` → `covers_driven_up.add`,
+`covers_driven_down.discard` (richtig, 2.17.0). In `brightness.py` ist die
+Abendfahrt aber ein **Pegel**: `_evaluate_area` ruft `_run_down` bei jeder
+Sensormeldung mit `lux ≤ lux_down` im Fenster, und `_run_down` fährt alles,
+was nicht in `covers_driven_down` steht – also den eben von Hand geöffneten
+Rollladen. Im Zeit- und Sonnenmodus ist die Abendfahrt ein Ereignis, danach
+gilt eine Handfahrt bis zum nächsten Tag; nur der Helligkeitsmodus verhielt
+sich anders. Das Dashboard war nie anders dran: die Zeilenknöpfe rufen
+`cover.open_cover` direkt, für den Tracker identisch mit dem Wandschalter –
+der Unterschied lag an der Uhrzeit (nach 22:00 kein Runter-Fenster mehr).
+
+**Fix:** je Rollladen die **Dunkel-Episode** merken, in der die Helligkeit
+ihn zugefahren hat (`data["_b_down_fired"][cover] = Episodenbeginn`). Die
+Episode gibt es schon: `cond_since` aus `lux_hold` (2.23.0) – beginnt beim
+Unterschreiten, wird beim Überschreiten oder Fensterende gelöscht. Sie wird
+jetzt auch ohne Frist gesetzt; `_run_down` überspringt, was in dieser
+Episode schon gefahren wurde. **Bewusst je Rollladen, nicht je Bereich:**
+ein Rollladen, dessen Automatik-Schalter beim Einbruch der Dunkelheit aus
+war und danach eingeschaltet wird, fährt in derselben Episode weiterhin
+(wie bisher). Der Uhrzeit-Notnagel („spätestens runter") ruft `_run_down`
+ohne Episode und ist unberührt. **bjoergs Fall aus 2.23.0 bleibt
+erhalten** und ist eigens im Test: Ausreißer am Nachmittag = Episode 1,
+hell dazwischen, Dämmerung = Episode 2 → fährt die von Hand geöffneten
+wieder zu.
+
+**Spiegelbild beim Hochfahren, beim Lesen von `should_skip_automated_up()`
+gefunden:** eine Handfahrt auf die Schließposition ist laut
+`manual_position_is_a_close()` bewusst *keine* Übersteuerung – im
+Hochfahr-Fenster öffnete die nächste helle Meldung den gerade von Hand
+geschlossenen Rollladen wieder. Gleicher Merker (`_b_up_fired`), aber erst
+bei der Fahrt selbst gesetzt, nicht vor `should_skip_automated_up`: ein
+wegen Beschattung oder Zwischenposition übersprungener Rollladen kommt in
+derselben Episode weiter dran, sobald der Grund wegfällt.
+
+**bjoerg (smarthome #155, keine Codeänderung):** „Hätten die Jalousien nach
+dem Ausreißer nicht wieder hochfahren müssen?" Nein: `up_met` verlangt das
+Hochfahr-Fenster (bei ihm bis 10:00/12:00), der Ausreißer war um 15:12. Mit
+`lux_hold 1` (inzwischen gesetzt) feuert der 7-Sekunden-Ausreißer gar nicht
+mehr. Seine Handöffnung über das Dashboard danach war korrekt verbucht
+(Export 19.9.: beide Wohnzimmer „gilt als oben", Quelle automation nach der
+Morgenfahrt). Zweite Frage – „einmal fuhren die OG-Rollläden tagsüber nicht
+hoch, Wohnzimmer schon" – ohne Datum und Export nur Kandidaten: OG-Fenster
+enden 10:00, Wohnzimmer 12:00; ein dunkler Morgen oder die Wetterstation
+ohne Werte während seiner Proxmox/HA-Update-Session (Lux erst nach 10:00
+über 201) trifft genau dieses Muster, `b_latest_up_enabled` ist bei ihm aus.
+Empfehlung: „spätestens hoch" für Schlaf-/Kinderbereich einschalten.
+
+**heinzie (simon42 #164–166, keine Codeänderung, Nachtrag zu 2.23.0):** sein
+Debug-Log zeigte bei jedem Minutentakt `Shutter cover.* overrides condition
+slots a` für **alle 13** Rollläden – die Bereichsbedingung (Temperatur
+90/89) wurde nie gefragt, weil jeder Rollladen einen eigenen Slot a
+(Helligkeitssensor) mitbrachte, vermutlich über „Einstellungen übernehmen
+von X" verteilt. Er hat es verstanden und räumt um. **Merke:** ein
+Rollladen-Override ist im Panel nirgends sichtbar, nur in einer
+DEBUG-Zeile – das gehört als Hinweis ins Formular (offen).
+
+**Verifiziert:** `pytest` 850 Tests grün (7 neue in
+`tests/test_brightness_manual_reopen.py`). Zwei Gegenproben: Runter-Marker
+entschärft → genau die zwei Linos-Tests fallen, 846 grün; Hoch-Marker
+entschärft → genau der eine Spiegel-Test fällt, 849 grün; beides
+wiederhergestellt, 850 grün. **Nicht im Browser geprüft** – reine
+Backend-Logik, keine Panel-Änderung.
+
 ### 2026-09-14 – 2.23.0: der Merker, der die Hand nicht bemerkte – und der Sensor, der log
 
 Vier Meldungen aus zwei Threads (simon42 #150–#153, smarthome #146–#147),

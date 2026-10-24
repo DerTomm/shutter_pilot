@@ -22,6 +22,7 @@ from .const import (
     CONF_SHUTTERS,
     CONF_COVER_ENTITY_ID,
     CONF_DRIVE_AFTER_CLOSE,
+    CONF_DRIVE_AFTER_CLOSE_UP,
     ROLE_CLOSED,
     ROLE_CLOSED_ALT,
     ROLE_OPEN,
@@ -169,6 +170,27 @@ async def setup_schedulers(hass: HomeAssistant, entry: ConfigEntry) -> None:
                         "%s: %s übersprungen (Sonnenschutz/manuelle Position)",
                         direction,
                         cover,
+                    )
+                    continue
+                # Erst nach der Ueberspringen-Pruefung: ein Rollladen, den die
+                # Beschattung oder eine Handfahrt ohnehin haelt, soll nichts
+                # vormerken. Eigener Haken, nicht drive_after_close – das wuerde
+                # bestehenden Installationen die Morgenfahrt nehmen.
+                if (
+                    direction_up
+                    and shutter.get(CONF_DRIVE_AFTER_CLOSE_UP, False)
+                    and is_window_open_or_tilted(hass, shutter)
+                ):
+                    remember_drive_after_close(
+                        hass, entry, data, cover,
+                        position=position, tilt=tilt, reason=direction,
+                        shutter=shutter,
+                    )
+                    covers_driven_up.add(cover)
+                    covers_driven_down.discard(cover)
+                    _LOGGER.info(
+                        "%s: %s Fenster offen – Hochfahrt wird nach Schließen ausgeführt (drive_after_close_up)",
+                        direction, cover,
                     )
                     continue
                 if moved > 0 and delay > 0:

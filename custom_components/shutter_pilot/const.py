@@ -143,6 +143,19 @@ ROLE_SUN_PROTECT_ALT = "sun_protect_alt"
 # Drive after close: wenn Zeit zum Schließen, Fenster aber offen -> merken, bei Fenster zu fahren
 CONF_DRIVE_AFTER_CLOSE = "drive_after_close"
 
+# Wie drive_after_close, aber fuer die Hochfahrt (Zeit, Helligkeit). Eigener
+# Haken statt Erweiterung des vorhandenen: wer drive_after_close schon gesetzt
+# hat, faehrt morgens bei offenem Fenster heute hoch und soll das weiter tun.
+# Gedacht fuer Raffstores, bei denen "auf" und "zu" dieselbe Position haben und
+# die Hochfahrt den Behang vor eine offene Tuer faehrt. Vorgabe: aus.
+CONF_DRIVE_AFTER_CLOSE_UP = "drive_after_close_up"
+
+# Ob der Fensterkontakt den Rollladen selbst faehrt (Lueftungs-/Kipp-Position,
+# Aussperrschutz-Klemme). Aus: der Kontakt dient nur als Riegel fuer die
+# Automatik (Nachholfahrt), er bewegt nichts. Vorgabe: an, wie bisher.
+CONF_WINDOW_REACT = "window_react"
+DEFAULT_WINDOW_REACT = True
+
 # Per-area schedule: time mode (weekday = default, weekend = optional override)
 CONF_AREA_TIME_UP = "time_up"  # HH:MM weekday
 CONF_AREA_TIME_DOWN = "time_down"  # HH:MM weekday
@@ -530,6 +543,8 @@ AWNING_UNUSED_KEYS = (
     CONF_WINDOW_CLOSE_DEBOUNCE,
     CONF_WINDOW_VENT_WHILE_OPEN,
     CONF_DRIVE_AFTER_CLOSE,
+    CONF_DRIVE_AFTER_CLOSE_UP,
+    CONF_WINDOW_REACT,
     CONF_TILT_ENABLED,
     CONF_TILT_OPEN,
     CONF_TILT_CLOSED,
@@ -557,6 +572,8 @@ WINDOW_UNUSED_KEYS = (
     CONF_WINDOW_CLOSE_DEBOUNCE,
     CONF_WINDOW_VENT_WHILE_OPEN,
     CONF_DRIVE_AFTER_CLOSE,
+    CONF_DRIVE_AFTER_CLOSE_UP,
+    CONF_WINDOW_REACT,
     CONF_TILT_ENABLED,
     CONF_TILT_OPEN,
     CONF_TILT_CLOSED,

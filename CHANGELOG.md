@@ -4,6 +4,25 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.24.0]
+
+### Neu
+- **Fensterkontakt als reiner Riegel** („Fensterkontakt fährt den Rollladen",
+  je Rollladen, Vorgabe an). Aus: der Kontakt bewegt nichts, weder auf die
+  Lüftungs- noch auf die Kippposition, hält aber automatische Fahrten zurück
+  und führt sie nach dem Schließen aus. Anlass: eine Terrassentür mit
+  Raffstore, der tagsüber unten steht und beim Öffnen der Tür sonst bewegt
+  wurde.
+- **Auch das Hochfahren nachholen** (je Rollladen, Vorgabe aus). Bei offenem
+  oder gekipptem Fenster wird eine fällige Hochfahrt (Zeit oder Helligkeit)
+  vorgemerkt und nach dem Schließen ausgeführt, samt Lamellenwinkel. Bei einem
+  Raffstore mit gleicher Position für „auf" und „zu" fährt die Hochfahrt den
+  Behang sonst vor die offene Tür.
+
+**Was ändert sich für mich?** Nichts, solange du die beiden Haken nicht
+setzt: der Kontakt verhält sich wie bisher, und wer „Nachholen wenn Fenster
+offen" schon nutzt, fährt morgens bei offenem Fenster weiter hoch.
+
 ## [2.23.5]
 
 ### Behoben

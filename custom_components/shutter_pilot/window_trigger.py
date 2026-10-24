@@ -15,6 +15,8 @@ from .const import (
     CONF_SHUTTERS,
     CONF_COVER_ENTITY_ID,
     CONF_WINDOW_CLOSE_DEBOUNCE,
+    CONF_WINDOW_REACT,
+    DEFAULT_WINDOW_REACT,
     CONF_WINDOW_ENTITY_ID,
     CONF_WINDOW_ENTITY_ID_2,
     CONF_WINDOW_VENT_WHILE_OPEN,
@@ -286,6 +288,14 @@ async def setup_window_triggers(hass: HomeAssistant, entry: ConfigEntry) -> None
                 # open. Drop the planned drive back before anything else can
                 # act on it.
                 cancel_window_close(data, cover_entity)
+
+            # Der Kontakt dient hier nur als Riegel: er fuehrt eine vorgemerkte
+            # Fahrt nach dem Schliessen aus, bewegt aber selbst nichts. Der
+            # Zweig "geschlossen" unten bleibt deshalb aktiv.
+            if window_state != "closed" and not shutter.get(
+                CONF_WINDOW_REACT, DEFAULT_WINDOW_REACT
+            ):
+                continue
 
             target_pos = _get_target_position_for_window_state(shutter, window_state)
 
