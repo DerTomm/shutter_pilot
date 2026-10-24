@@ -45,6 +45,8 @@ from .helpers import (
     get_azimuth_bounds,
     get_elevation_bounds,
     get_position_for_role,
+    position_kept,
+    role_position,
     get_sun_angles,
     get_tilt_for_role,
     is_auto_enabled,
@@ -151,6 +153,11 @@ async def setup_elevation_listener(hass: HomeAssistant, entry: ConfigEntry) -> N
                 # entity dictates. The reason travels along for the log: "50%"
                 # without it never says why it was not 25.
                 pos, why = resolve_shade_position(hass, area, shutter, data)
+                # Only the plain shading position can be left alone; one that
+                # came from a helper entity or the second position is a number
+                # somebody asked for.
+                if why == ROLE_SUN_PROTECT and position_kept(shutter, ROLE_SUN_PROTECT):
+                    pos = None
                 tilt = get_tilt_for_role(shutter, ROLE_SUN_PROTECT)
                 if why != ROLE_SUN_PROTECT:
                     _LOGGER.debug(
@@ -209,12 +216,12 @@ async def setup_elevation_listener(hass: HomeAssistant, entry: ConfigEntry) -> N
             else:
                 elev_desc = "elevation check disabled"
             _LOGGER.info(
-                "[sun-protect] area=%s: %s, azimuth=%s → %s -> %d%%",
+                "[sun-protect] area=%s: %s, azimuth=%s → %s -> %s",
                 area_id,
                 elev_desc,
                 f"{azim:.1f}" if azim is not None else "n/a",
                 cover_entity,
-                int(pos),
+                "height unchanged" if pos is None else f"{int(pos)}%",
             )
             if idx > 0 and delay > 0:
                 await asyncio.sleep(delay)
@@ -232,7 +239,7 @@ async def setup_elevation_listener(hass: HomeAssistant, entry: ConfigEntry) -> N
                 shaded.append(cover_entity)
                 if awning:
                     data.setdefault("_awning_track_last", {})[cover_entity] = pos
-                else:
+                elif pos is not None:
                     data.setdefault("_shade_pos_last", {})[cover_entity] = pos
             else:
                 _LOGGER.warning(
@@ -261,11 +268,12 @@ async def setup_elevation_listener(hass: HomeAssistant, entry: ConfigEntry) -> N
             # aufgerissen, sobald der Raum abkuehlt. Die Ruhestellung kommt
             # deshalb aus der Geraeteart, genau wie beim Schutz.
             role = rest_role(shutter)
-            pos = get_position_for_role(shutter, role)
+            pos = role_position(shutter, role)
             tilt = get_tilt_for_role(shutter, role)
             _LOGGER.info(
-                "[sun-protect] area=%s: release (%s) → %s -> %d%%",
-                area_id, reason, cover_entity, int(pos),
+                "[sun-protect] area=%s: release (%s) → %s -> %s",
+                area_id, reason, cover_entity,
+                "height unchanged" if pos is None else f"{int(pos)}%",
             )
             if idx > 0 and delay > 0:
                 await asyncio.sleep(delay)

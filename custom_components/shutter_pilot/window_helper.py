@@ -188,14 +188,18 @@ def is_window_open_or_tilted(hass: HomeAssistant, shutter: dict) -> bool:
 
 
 def get_effective_close_position(
-    hass: HomeAssistant, shutter: dict, target_position: float
-) -> float:
+    hass: HomeAssistant, shutter: dict, target_position: float | None
+) -> float | None:
     """
     Apply lock protection (Aussperrschutz):
     - If lock_protection and window open/tilted: return min_position_when_open
       (so we never fully close - you can't lock yourself out)
     - Otherwise return target_position
     """
+    # "Leave the height where it is" cannot close anything in front of a door.
+    if target_position is None:
+        return None
+
     # An awning must never be capped from below: the cap exists so a shutter
     # cannot close in front of an open door, and on an awning "lower" means
     # retracted – the safe end, not the dangerous one. A leftover lock_protection

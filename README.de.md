@@ -423,6 +423,14 @@ Motor anfahren kann. Ohne sie wird aus jedem Wert ab 50 % „ganz ausfahren" –
 das steht einmal als Warnung im Log und im Export.
 
 
+## Höhe und Lamellen getrennt
+
+Ein Raffstore, der den ganzen Tag unten steht und über die Lamellen geregelt wird, muss je Zustand sagen können: „Höhe nicht anfassen" oder „Winkel nicht anfassen". Bei aktivierten Lamellen hat jeder der drei Zustände (auf, zu, Sonnenschutz) neben seiner Position einen Haken **Höhe unverändert lassen** und jeder Winkel einen Haken **Lamellen unverändert lassen**. Angekreuzt entfällt der Schieber, und nur die andere Hälfte wird gefahren. Beides aus (die Vorgabe): der Zustand fährt Höhe und Winkel wie bisher. Beides angekreuzt sendet für diesen Zustand nichts.
+
+Die abweichenden Schließpositionen, die zweite Beschattungsposition und eine Beschattungsposition aus einer Hilfs-Entität behalten ihre Zahlen. Die Gruppenknöpfe und die Dienste beachten die Einstellung ebenfalls.
+
+**Lamellen erst nach erreichter Höhe senden** (Vorgabe aus): viele KNX-Aktoren setzen den Lamellenwinkel nach einer Höhenfahrt zurück, ein zusammen mit der Höhe gesendeter Winkel geht also verloren. Mit dem Haken wartet Shutter Pilot, bis das Cover die Höhe meldet, und sendet den Winkel dann, spätestens nach drei Minuten. Eine neue Fahrt für dasselbe Cover ersetzt einen wartenden Winkel.
+
 ## Windschutz für Raffstores
 
 Ein Raffstore verträgt mehr Wind als eine Markise, aber nicht beliebig viel, und „sicher" heißt etwas anderes: nicht `position_open` (meist unten mit offenen Lamellen), sondern oben mit offenen Lamellen. Deshalb ist der Schutz eine eigene Einstellung am Rollladen, zum Zuschalten, im Abschnitt *Windschutz Raffstore* (erscheint, sobald Lamellen aktiv sind):

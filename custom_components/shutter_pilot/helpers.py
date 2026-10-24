@@ -75,6 +75,16 @@ from .const import (
     DEFAULT_AWNING_TRACK_STEP,
     DEFAULT_DEVICE_KIND,
     AWNING_GUARD_STATE_KEY,
+    CONF_KEEP_POSITION_CLOSED,
+    CONF_KEEP_POSITION_OPEN,
+    CONF_KEEP_POSITION_SUN_PROTECT,
+    CONF_KEEP_TILT_CLOSED,
+    CONF_KEEP_TILT_OPEN,
+    CONF_KEEP_TILT_SUN_PROTECT,
+    CONF_TILT_AFTER_POSITION,
+    TILT_WAIT_MAX_SEC,
+    TILT_WAIT_POLL_SEC,
+    TILT_WAIT_TOLERANCE_PCT,
     CONF_AUTOMATION_LOCK_ENTITY,
     CONF_STORM_GUARD,
     KIND_AWNING,
@@ -1467,9 +1477,61 @@ def awning_track_step(shutter: dict[str, Any]) -> float:
     return max(1.0, min(100.0, step))
 
 
+_ROLE_KEEP_POSITION_KEYS = {
+    ROLE_OPEN: CONF_KEEP_POSITION_OPEN,
+    ROLE_CLOSED: CONF_KEEP_POSITION_CLOSED,
+    ROLE_SUN_PROTECT: CONF_KEEP_POSITION_SUN_PROTECT,
+}
+# Follows _ROLE_TILT_KEYS: the roles that read the closed angle also read its
+# "unchanged" flag, so the evening drive and the frost position agree.
+_ROLE_KEEP_TILT_KEYS = {
+    ROLE_OPEN: CONF_KEEP_TILT_OPEN,
+    ROLE_CLOSED: CONF_KEEP_TILT_CLOSED,
+    ROLE_CLOSED_ALT: CONF_KEEP_TILT_CLOSED,
+    ROLE_CLOSED_FROST: CONF_KEEP_TILT_CLOSED,
+    ROLE_SUN_PROTECT: CONF_KEEP_TILT_SUN_PROTECT,
+    ROLE_VENTILATION: CONF_KEEP_TILT_SUN_PROTECT,
+    ROLE_SUN_PROTECT_ALT: CONF_KEEP_TILT_SUN_PROTECT,
+}
+
+
+def position_kept(shutter: dict[str, Any], role: str) -> bool:
+    """True if this role is set to "leave the height where it is".
+
+    Only for a shutter that has slats: without an angle to send there would be
+    nothing left to drive, and a stray leftover flag must not turn the role
+    into a no-op.
+    """
+    key = _ROLE_KEEP_POSITION_KEYS.get(role)
+    return bool(
+        key
+        and is_shutter(shutter)
+        and shutter.get(CONF_TILT_ENABLED, False)
+        and shutter.get(key, False)
+    )
+
+
+def role_position(shutter: dict[str, Any], role: str) -> float | None:
+    """The height to drive to for a role, or None for "leave it where it is".
+
+    get_position_for_role() stays the number every decision reads; this is the
+    one the *drive* asks, at the places that actually send the command.
+    """
+    if position_kept(shutter, role):
+        return None
+    return get_position_for_role(shutter, role)
+
+
 def get_tilt_for_role(shutter: dict[str, Any], role: str) -> float | None:
-    """Return the slat angle for a role, or None when tilt is not used."""
+    """Return the slat angle for a role, or None when tilt is not used.
+
+    None also means "leave the angle alone" for a role the owner marked
+    unchanged - every caller already treats None as "send no angle".
+    """
     if not bool(shutter.get(CONF_TILT_ENABLED, False)):
+        return None
+    keep_key = _ROLE_KEEP_TILT_KEYS.get(role)
+    if keep_key and shutter.get(keep_key, False):
         return None
     key, fallback = _ROLE_TILT_KEYS.get(role, (CONF_TILT_OPEN, DEFAULT_TILT_OPEN))
     try:
@@ -1665,7 +1727,7 @@ def remember_drive_after_close(
     data: dict[str, Any],
     cover_entity_id: str,
     *,
-    position: float,
+    position: float | None,
     tilt: float | None,
     reason: str,
     shutter: dict[str, Any],
@@ -2168,7 +2230,7 @@ async def set_cover_position(
     hass: HomeAssistant,
     entry: ConfigEntry,
     entity_id: str,
-    position: float,
+    position: float | None,
     reason: str,
     *,
     source: str | None = None,
@@ -2182,43 +2244,61 @@ async def set_cover_position(
     driving need to know – a failure used to be a log line only, so shading
     could mark itself active for a shutter that never moved.
 
+    `position=None` means "leave the height where it is" and sends only the
+    angle; with neither there is nothing to do and nothing is sent.
+
     `urgent` skips the global drive gap. Storm protection is the one caller
     that has it: with a ten second gap and four awnings the last one would
     stand in the wind for half a minute.
     """
+    if position is None and tilt_position is None:
+        return True
     mark_automation_pending(hass, entry, entity_id)
     try:
         if not urgent:
             await _respect_min_drive_gap(hass, entry)
-        await _send_position(
-            hass, entity_id, position, find_shutter_by_cover(entry, entity_id)
-        )
-        _LOGGER.info("%s: %s -> %d%%", reason, entity_id, int(position))
+        shutter = find_shutter_by_cover(entry, entity_id)
+        if position is not None:
+            await _send_position(hass, entity_id, position, shutter)
+            _LOGGER.info("%s: %s -> %d%%", reason, entity_id, int(position))
+        else:
+            _LOGGER.info("%s: %s height unchanged", reason, entity_id)
 
         if tilt_position is not None:
-            await _set_cover_tilt(hass, entity_id, tilt_position, reason)
+            if (
+                position is not None
+                and shutter is not None
+                and shutter.get(CONF_TILT_AFTER_POSITION, False)
+                and not _position_reached(hass, entity_id, position)
+            ):
+                _start_tilt_after_position(
+                    hass, entry, entity_id, position, tilt_position, reason
+                )
+            else:
+                await _set_cover_tilt(hass, entity_id, tilt_position, reason)
 
         data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
-        if isinstance(data, dict):
-            data.setdefault("last_positions", {})[entity_id] = float(position)
-            # Getrennt von last_positions, das der Positions-Mitschreiber
-            # laufend mit Momentaufnahmen ueberschreibt. Hier steht, wohin
-            # zuletzt *befohlen* wurde – die einzige Zahl, die auch waehrend
-            # der Fahrt etwas bedeutet.
-            data.setdefault("commanded_positions", {})[entity_id] = float(position)
+        if position is not None:
+            if isinstance(data, dict):
+                data.setdefault("last_positions", {})[entity_id] = float(position)
+                # Getrennt von last_positions, das der Positions-Mitschreiber
+                # laufend mit Momentaufnahmen ueberschreibt. Hier steht, wohin
+                # zuletzt *befohlen* wurde – die einzige Zahl, die auch waehrend
+                # der Fahrt etwas bedeutet.
+                data.setdefault("commanded_positions", {})[entity_id] = float(position)
 
-        store = get_position_store(hass, entry.entry_id)
-        await store.async_set_position(
-            entity_id,
-            position,
-            source or SOURCE_AUTOMATION,
-        )
+            store = get_position_store(hass, entry.entry_id)
+            await store.async_set_position(
+                entity_id,
+                position,
+                source or SOURCE_AUTOMATION,
+            )
 
         hass.bus.async_fire(
             EVENT_COVER_MOVED,
             {
                 "entity_id": entity_id,
-                "position": float(position),
+                "position": None if position is None else float(position),
                 "tilt_position": tilt_position,
                 "reason": reason,
                 "area_id": area_id,
@@ -2227,10 +2307,12 @@ async def set_cover_position(
         )
 
         # Check later whether the cover really got there. Imported lazily
-        # because cover_verify needs helpers itself.
-        from .cover_verify import schedule_verification
+        # because cover_verify needs helpers itself. A height that was left
+        # alone has nothing to verify.
+        if position is not None:
+            from .cover_verify import schedule_verification
 
-        schedule_verification(hass, entry, entity_id, float(position), reason)
+            schedule_verification(hass, entry, entity_id, float(position), reason)
         return True
     except Exception as e:
         _LOGGER.warning("Failed to set %s: %s", entity_id, e)
@@ -2240,6 +2322,58 @@ async def set_cover_position(
             recent = data.setdefault("recent_automation_covers", {})
             recent.pop(entity_id, None)
         return False
+
+
+def _position_reached(hass: HomeAssistant, entity_id: str, position: float) -> bool:
+    """True if the cover is already at the target, or cannot be asked."""
+    current = get_cover_current_position(hass, entity_id)
+    return current is None or abs(current - position) <= TILT_WAIT_TOLERANCE_PCT
+
+
+def _start_tilt_after_position(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    entity_id: str,
+    position: float,
+    tilt_position: float,
+    reason: str,
+) -> None:
+    """Send the slat angle once the height has been reached.
+
+    A new drive for the same cover replaces a waiting one: the angle belongs to
+    the height it was sent with, and sending a stale one later would undo the
+    newer decision.
+    """
+    data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if not isinstance(data, dict):
+        return
+    tasks: dict[str, asyncio.Task] = data.setdefault("_tilt_tasks", {})
+    previous = tasks.pop(entity_id, None)
+    if previous is not None and not previous.done():
+        previous.cancel()
+
+    async def _wait_then_tilt() -> None:
+        try:
+            waited = 0.0
+            while waited < TILT_WAIT_MAX_SEC and not _position_reached(
+                hass, entity_id, position
+            ):
+                await asyncio.sleep(TILT_WAIT_POLL_SEC)
+                waited += TILT_WAIT_POLL_SEC
+            await _set_cover_tilt(hass, entity_id, tilt_position, reason)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # pragma: no cover - defensive
+            _LOGGER.exception("Slat angle after position failed for %s", entity_id)
+        finally:
+            if tasks.get(entity_id) is asyncio.current_task():
+                tasks.pop(entity_id, None)
+
+    # A background task: it may legitimately wait minutes, and a tracked one
+    # would hold up async_block_till_done() - and Home Assistant's shutdown.
+    tasks[entity_id] = hass.async_create_background_task(
+        _wait_then_tilt(), f"shutter_pilot_tilt_{entity_id}"
+    )
 
 
 def _supported_features(hass: HomeAssistant, entity_id: str) -> int:

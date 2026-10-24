@@ -66,7 +66,11 @@ class ShutterPositionStore:
         )
 
     async def async_set_pending(
-        self, cover_entity_id: str, position: float, tilt: float | None, reason: str
+        self,
+        cover_entity_id: str,
+        position: float | None,
+        tilt: float | None,
+        reason: str,
     ) -> None:
         """Remember a drive that waits for the window to close.
 
@@ -76,7 +80,7 @@ class ShutterPositionStore:
         """
         await self.async_load()
         self._pending[cover_entity_id] = {
-            "position": float(position),
+            "position": None if position is None else float(position),
             "tilt": None if tilt is None else float(tilt),
             "reason": str(reason),
             "saved": datetime.now().astimezone().isoformat(),

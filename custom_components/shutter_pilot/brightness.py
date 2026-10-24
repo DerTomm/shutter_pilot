@@ -60,7 +60,7 @@ from .helpers import (
     automated_up_blocked,
     clear_manual_override_for_covers,
     clear_stale_window_cycle_after_automated_up,
-    get_position_for_role,
+    role_position,
     get_tilt_for_role,
     is_auto_enabled,
     is_shutter_automation_enabled,
@@ -292,7 +292,7 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
             # freeze shut, or only close part way on a mild evening,
             # has to behave that way here too.
             close_role = resolve_close_role(hass, area, shutter, data)
-            pos = get_position_for_role(shutter, close_role)
+            pos = role_position(shutter, close_role)
             tilt = get_tilt_for_role(shutter, close_role)
             drive_after = shutter.get(CONF_DRIVE_AFTER_CLOSE, False)
             if drive_after and is_window_open_or_tilted(hass, shutter):
@@ -402,7 +402,7 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
                     cover_entity,
                 )
                 continue
-            pos = get_position_for_role(shutter, ROLE_OPEN)
+            pos = role_position(shutter, ROLE_OPEN)
             tilt = get_tilt_for_role(shutter, ROLE_OPEN)
             # Wie im Scheduler: erst nach should_skip_automated_up, eigener
             # Haken. Die Fahrt gilt als beschlossen und wartet nur aufs Fenster.
@@ -422,7 +422,11 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
                     cover_entity,
                 )
                 continue
-            _LOGGER.info("Brightness up: driving %s -> %d%%", cover_entity, pos)
+            _LOGGER.info(
+                "Brightness up: driving %s -> %s",
+                cover_entity,
+                "unchanged" if pos is None else f"{int(pos)}%",
+            )
             if episode is not None:
                 up_fired[cover_entity] = episode
             up_covers.append(cover_entity)

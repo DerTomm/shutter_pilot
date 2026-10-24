@@ -205,3 +205,21 @@ def test_door_lock_hooks_are_in_the_form_and_the_unused_key_lists() -> None:
         assert block, name
         assert '"drive_after_close_up"' in block.group(1), name
         assert '"window_react"' in block.group(1), name
+
+
+def test_keep_and_tilt_order_fields_are_in_the_panel() -> None:
+    """Hoehe/Lamellen "unveraendert" und der Winkel nach der Hoehe (2.26.0)."""
+    root = Path(__file__).parent.parent / "custom_components/shutter_pilot"
+    text = (root / "frontend/shutter-pilot-panel.js").read_text(encoding="utf-8")
+    for key in ("f_keep_position", "f_keep_position_on", "f_keep_tilt",
+                "f_keep_tilt_on", "f_tilt_after_position",
+                "f_tilt_after_position_hint"):
+        assert text.count(f"{key}:") == 11, key
+    for name in ("AWNING_UNUSED_KEYS", "WINDOW_UNUSED_KEYS"):
+        block = re.search(rf"const {name} = \[(.*?)\];", text, re.S)
+        assert block, name
+        for key in ("keep_position_open", "keep_position_closed",
+                    "keep_position_sun_protect", "keep_tilt_open",
+                    "keep_tilt_closed", "keep_tilt_sun_protect",
+                    "tilt_after_position"):
+            assert f'"{key}"' in block.group(1), (name, key)

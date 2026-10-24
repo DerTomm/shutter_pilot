@@ -38,6 +38,8 @@ from .helpers import (
     filter_shutters_by_area,
     get_position_for_role,
     get_tilt_for_role,
+    position_kept,
+    role_position,
     is_awning,
     has_guard,
     forget_shading_for_cover,
@@ -126,13 +128,15 @@ async def _drive_group(
                     cover,
                 )
                 continue
-            position = resolve_shade_position(hass, area_cfg, shutter, data)[0]
+            position, why = resolve_shade_position(hass, area_cfg, shutter, data)
+            if why == ROLE_SUN_PROTECT and position_kept(shutter, ROLE_SUN_PROTECT):
+                position = None
         else:
-            position = get_position_for_role(shutter, role)
+            position = role_position(shutter, role)
         # An awning that must not be out stays in, whoever asked. Judged by the
         # target rather than by the role: close_group on an awning means
         # "retract it", and refusing *that* during a storm would be absurd.
-        if has_guard(shutter) and is_barred(data, cover):
+        if position is not None and has_guard(shutter) and is_barred(data, cover):
             if clamp_to_rest(shutter, position) != position:
                 _LOGGER.info(
                     "%s: %s skipped – awning protection active (%s)",
@@ -425,7 +429,7 @@ async def async_setup_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     cover,
                 )
                 continue
-            position = get_position_for_role(shutter, role)
+            position = role_position(shutter, role)
             if role == ROLE_CLOSED:
                 position = get_effective_close_position(hass, shutter, position)
             # Defensiv, unter der heutigen Konfiguration nicht erreichbar:
@@ -445,7 +449,12 @@ async def async_setup_services(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     continue
                 position = safe
             await set_cover_position(
-                hass, entry, cover, position, "Resume automation"
+                hass, entry, cover, position, "Resume automation",
+                # Nur wenn die Hoehe unveraendert bleibt: sonst gaebe es nichts
+                # zu senden. Mit Hoehe faehrt resume wie bisher ohne Winkel.
+                tilt_position=(
+                    get_tilt_for_role(shutter, role) if position is None else None
+                ),
             )
             # Wie in _drive_group(): ohne diese zwei Zeilen blieb der alte
             # Richtungsmerker stehen, der resume gerade beheben sollte. Ein

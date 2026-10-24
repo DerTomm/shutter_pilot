@@ -414,6 +414,14 @@ value from 50 % up becomes "fully extended" – that is logged once as a warning
 and named in the export.
 
 
+## Height and slats separately
+
+A venetian blind that stays down all day and is steered by its slats needs to say, per state, "leave the height alone" or "leave the angle alone". With slats enabled, each of the three states (open, closed, shading) has a checkbox **Leave the height unchanged** next to its position, and each angle a checkbox **Leave the slats unchanged**. Ticked, the slider disappears and only the other half is driven. Both off (the default): the state drives height and angle exactly as before. Ticking both sends nothing for that state.
+
+The alternative closing positions, the second shading position and a shading position from a helper entity keep their numbers. The group buttons and the services honour the setting too.
+
+**Send the slats only after the height is reached** (off by default): many KNX actuators reset the slat angle after a height drive, so an angle sent together with the height is lost. With this option Shutter Pilot waits until the cover reports the height and sends the angle then, after three minutes at the latest. A new drive for the same cover replaces a waiting angle.
+
 ## Wind protection for venetian blinds
 
 Venetian blinds stand more wind than awnings but not unlimited wind, and what "safe" means is different: not `position_open` (usually the lowered position with open slats) but up, with open slats. So the protection is a separate, opt-in setting on the shutter, in the section *Wind protection venetian blind* (shown once slats are enabled):

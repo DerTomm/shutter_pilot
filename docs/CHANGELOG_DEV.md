@@ -4,6 +4,32 @@ Vollständiges Fortschritts-Log von Shutter Pilot, ausgelagert aus `CLAUDE.md`, 
 
 Bei Fragen zur Historie: hier nachlesen oder `grep`/`graphify` benutzen, bevor eine Vermutung über eine frühere Entscheidung geäußert wird.
 
+### 2026-10-12 – 2.23.3: die 0, die keine leere Grenze ist
+
+Eine Forumsmeldung (Linos, simon42 #185): Hochfahren ab 06:30 Uhr und mehr
+als 20 lx; die Helligkeit war seit 07:19 da, die Rollläden fuhren erst um
+ca. 07:30. Er vermutete die „wiederholte Bestätigung" (`lux_hold`).
+
+**Kein Codefehler, nachgerechnet bis zur Ursache.** Sein Export: `lux_hold`
+leer, „spätestens hoch" aus, aber in allen fünf Bereichen
+`b_up_before_sunrise = 0`. `_sun_bound_ok()` (brightness.py) unterscheidet
+leer (keine Grenze) von `0` (nicht vor Sonnenaufgang) – das war immer so und
+steht im README. Sonnenaufgang am 12.10. in Siegenburg: 07:28 (astral);
+sein Sensor meldet alle 2–3 Minuten, die erste Meldung nach 07:28 fuhr.
+„zuletzt geladen vor 1453 min" schloss den Montagsneustart aus.
+
+**Änderung nur im Panel:** unter den „Zusätzlichen Sonnengrenzen" steht jetzt
+dauerhaft „Leer = keine Grenze. Eine 0 ist eine Grenze …"
+(`f_sunbound_empty`), und eine gelbe Warnung (`f_sunbound_zero`) erscheint,
+sobald eines der beiden Felder explizit `0` enthält. Dafür löst `numOpt`
+bei `change` ein `requestUpdate()` aus. i18n 448/448 ×11. **Merke:** eine
+Einstellung, bei der „0" und „leer" verschiedene Dinge sind, ist ohne
+sichtbaren Hinweis eine Falle – dasselbe Muster wie der unsichtbare
+Rollladen-Override (heinzie, 2.23.1).
+
+**Verifiziert:** `pytest` grün (neuer Test in `tests/test_panel.py` prüft
+Schlüssel und Warnzeile im Panel). Nicht im Browser geprüft.
+
 ### 2026-10-04 – 2.23.2: das Fenster, das den geparkten Rollladen nicht kannte
 
 Zwei Meldungen, ein Release. Bjoerg (smarthome #166), Export mit

@@ -34,7 +34,7 @@ from .helpers import (
     clear_manual_override_for_covers,
     clear_stale_window_cycle_after_automated_up,
     filter_shutters_by_area,
-    get_position_for_role,
+    role_position,
     get_tilt_for_role,
     is_auto_enabled,
     is_shutter_automation_enabled,
@@ -124,7 +124,7 @@ async def setup_schedulers(hass: HomeAssistant, entry: ConfigEntry) -> None:
                         "%s: %s closes only part way (%s)",
                         direction, cover, shutter_role,
                     )
-            position = get_position_for_role(shutter, shutter_role)
+            position = role_position(shutter, shutter_role)
             tilt = get_tilt_for_role(shutter, shutter_role)
             drive_after = shutter.get(CONF_DRIVE_AFTER_CLOSE, False)
             if apply_lock_protection and drive_after and is_window_open_or_tilted(hass, shutter):

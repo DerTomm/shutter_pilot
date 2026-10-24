@@ -42,7 +42,7 @@ Stolpersteine:
 - Sperre in Scheduler, Helligkeit und Beschattung abfragen, nur bei gesetztem Haken.
 - **KNX-Windalarm am Aktor (Claus):** Ist der Aktor selbst verriegelt, soll Shutter Pilot nicht senden bzw. die Fahrtkontrolle das nicht als Fehler werten, und danach die zuletzt gewollte Stellung nachholen. Offen: wie erkennt man den Alarm (eigener Sensor?). Im Forum nachfragen.
 
-## Stufe 3 – Position und Lamellen getrennt (Claus #172, #196, Kern seines Wunsches)
+## Stufe 3 – Position und Lamellen getrennt (Claus #172, #196, Kern seines Wunsches)  — umgesetzt in 2.26.0 (lokal)
 
 - Je Rolle (offen, zu, Sonnenschutz): Position **oder** Lamellen auf "unverändert" setzbar. Heute sendet `set_cover_position` immer eine Position, `get_tilt_for_role` kennt nur Zahlen oder `None` (= aus).
 - Neue Werte "unverändert" dürfen bestehende Zahlen nicht umdeuten (leer = bisheriges Verhalten).

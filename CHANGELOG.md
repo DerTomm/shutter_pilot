@@ -4,6 +4,24 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.26.0]
+
+### Neu
+- **Höhe und Lamellen getrennt** (je Zustand: auf, zu, Sonnenschutz). Bei
+  aktivierten Lamellen lässt sich für jeden Zustand „Höhe unverändert lassen"
+  und für jeden Winkel „Lamellen unverändert lassen" ankreuzen. Gedacht für
+  Raffstores, die den ganzen Tag unten stehen und nur über die Lamellen
+  geregelt werden. Zeitplan, Helligkeit, Beschattung, Gruppenknöpfe und eine
+  vorgemerkte Nachholfahrt beachten es.
+- **Lamellen erst nach erreichter Höhe senden** (Vorgabe aus). Viele
+  KNX-Aktoren setzen den Winkel nach einer Höhenfahrt zurück; mit dem Haken
+  wartet Shutter Pilot, bis die Höhe gemeldet wird, und sendet den Winkel dann,
+  spätestens nach drei Minuten.
+- Der Export nennt, welche Zustände Höhe oder Lamellen unverändert lassen.
+
+**Was ändert sich für mich?** Nichts, solange du die Haken nicht setzt: jeder
+Zustand fährt Höhe und Winkel wie bisher.
+
 ## [2.25.0]
 
 ### Neu

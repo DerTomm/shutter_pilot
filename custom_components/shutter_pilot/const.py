@@ -126,6 +126,26 @@ DEFAULT_TILT_OPEN = 100
 DEFAULT_TILT_CLOSED = 0
 DEFAULT_TILT_SUN_PROTECT = 30
 
+# "Unchanged" per state (2.26.0). A venetian blind that stays down all day and
+# is steered by its slats needs to say "leave the height alone" or "leave the
+# angle alone" for a state, which a number cannot express: an empty slider
+# field means "use the default", not "do not move". All off by default, so a
+# stored configuration reads exactly as before. Only the three base roles; the
+# alternative closing and shading positions carry numbers of their own.
+CONF_KEEP_POSITION_OPEN = "keep_position_open"
+CONF_KEEP_POSITION_CLOSED = "keep_position_closed"
+CONF_KEEP_POSITION_SUN_PROTECT = "keep_position_sun_protect"
+CONF_KEEP_TILT_OPEN = "keep_tilt_open"
+CONF_KEEP_TILT_CLOSED = "keep_tilt_closed"
+CONF_KEEP_TILT_SUN_PROTECT = "keep_tilt_sun_protect"
+# Many KNX actuators reset the slat angle after a height drive, so an angle
+# sent together with the height is lost. With this the angle is only sent once
+# the height has been reached. Off by default.
+CONF_TILT_AFTER_POSITION = "tilt_after_position"
+TILT_WAIT_TOLERANCE_PCT = 3.0
+TILT_WAIT_POLL_SEC = 2.0
+TILT_WAIT_MAX_SEC = 180.0
+
 # Roles used to resolve position/tilt for a shutter
 ROLE_OPEN = "open"
 ROLE_CLOSED = "closed"
@@ -577,6 +597,13 @@ AWNING_UNUSED_KEYS = (
     CONF_STORM_POSITION,
     CONF_STORM_TILT,
     CONF_AUTOMATION_LOCK_ENTITY,
+    CONF_KEEP_POSITION_OPEN,
+    CONF_KEEP_POSITION_CLOSED,
+    CONF_KEEP_POSITION_SUN_PROTECT,
+    CONF_KEEP_TILT_OPEN,
+    CONF_KEEP_TILT_CLOSED,
+    CONF_KEEP_TILT_SUN_PROTECT,
+    CONF_TILT_AFTER_POSITION,
     CONF_TILT_ENABLED,
     CONF_TILT_OPEN,
     CONF_TILT_CLOSED,
@@ -610,6 +637,13 @@ WINDOW_UNUSED_KEYS = (
     CONF_STORM_POSITION,
     CONF_STORM_TILT,
     CONF_AUTOMATION_LOCK_ENTITY,
+    CONF_KEEP_POSITION_OPEN,
+    CONF_KEEP_POSITION_CLOSED,
+    CONF_KEEP_POSITION_SUN_PROTECT,
+    CONF_KEEP_TILT_OPEN,
+    CONF_KEEP_TILT_CLOSED,
+    CONF_KEEP_TILT_SUN_PROTECT,
+    CONF_TILT_AFTER_POSITION,
     CONF_TILT_ENABLED,
     CONF_TILT_OPEN,
     CONF_TILT_CLOSED,

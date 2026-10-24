@@ -43,6 +43,8 @@ from .const import (
     AWNING_DUSK_SLOT,
     AWNING_GUARD_SLOTS,
     CONF_AUTOMATION_LOCK_ENTITY,
+    CONF_TILT_AFTER_POSITION,
+    CONF_TILT_ENABLED,
     STORM_GUARD_SLOTS,
     AWNING_GUARD_ICE,
     AWNING_GUARD_RAIN,
@@ -340,6 +342,31 @@ def _condition_rows(
         ],
         all_met,
     )
+
+
+def _keep_note(shutter: dict[str, Any]) -> list[str]:
+    """Which states leave the height or the slats alone, in plain words.
+
+    "It only moves the slats" is exactly the behaviour that looks like a
+    missing drive in a report: the position row says 21 %, nothing moved.
+    """
+    if not shutter.get(CONF_TILT_ENABLED):
+        return []
+    names = (("open", "auf"), ("closed", "zu"), ("sun_protect", "Sonnenschutz"))
+    kept_h = [n for k, n in names if shutter.get(f"keep_position_{k}")]
+    kept_t = [n for k, n in names if shutter.get(f"keep_tilt_{k}")]
+    after = bool(shutter.get(CONF_TILT_AFTER_POSITION))
+    if not (kept_h or kept_t or after):
+        return []
+    rows = ["Höhe und Lamellen getrennt:", ""]
+    if kept_h:
+        rows.append(f"- Höhe bleibt unverändert bei: {', '.join(kept_h)} (es fahren nur die Lamellen)")
+    if kept_t:
+        rows.append(f"- Lamellen bleiben unverändert bei: {', '.join(kept_t)}")
+    if after:
+        rows.append("- Lamellen werden erst nach erreichter Höhe gesendet")
+    rows.append("")
+    return rows
 
 
 def _guard_rows(
@@ -1346,6 +1373,7 @@ async def async_build_export(
             out += _window_silent_notes(shutter, down_area)
             out += _guard_rows(hass, entry, data, shutter)
         else:
+            out += _keep_note(shutter)
             if has_storm_guard(shutter):
                 out += _guard_rows(
                     hass, entry, data, shutter, STORM_GUARD_SLOTS,

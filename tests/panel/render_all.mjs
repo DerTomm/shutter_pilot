@@ -45,6 +45,7 @@ const shutters = [
     window_entity_id:"binary_sensor.fenster", window_open_state:"on", window_tilted_state:"none",
     lock_protection:true, min_position_when_open:20, drive_after_close:true,
     sun_geometry_override:true, elevation_enabled:true, blind_drive:true, my_position_entity:"button.my_pos",
+    keep_position_sun_protect:true, keep_tilt_open:true, tilt_after_position:true,
     storm_guard:true, storm_position:100, storm_tilt:100, sun_cond_rwind_entity:"binary_sensor.windalarm",
     automation_lock_entity:"input_boolean.fenster_putzen", window_react:false, drive_after_close_up:true },
   { cover_entity_id:"cover.rollladen_b", name:"Rollladen B", area_up_id:"living", area_down_id:"living",
