@@ -4,6 +4,21 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.23.5]
+
+### Behoben
+- **Neustart am Abend: Rollläden stehen danach offen.** Nach einem Neustart
+  melden manche Cover-Integrationen zuerst eine Standardposition (100 %).
+  Shutter Pilot hielt das für eine Handfahrt, überschrieb damit die gemerkte
+  Position, und die Wiederherstellung nach dem Start sah nichts mehr
+  zurückzuholen. Die Wiederherstellung liest jetzt den Stand von vor dem
+  Neustart und verbucht den Rollladen danach wieder als „unten", damit ihn
+  der nächste Morgen nicht überspringt. Meldet ein Cover nach dem Start
+  seine gespeicherte Position, ändert sich nichts.
+
+  **Gut zu wissen:** Ein Rollladen, der genau während des Neustarts von Hand
+  bewegt wurde, fährt auf die gespeicherte Position zurück.
+
 ## [2.23.4]
 
 Shutter Pilot ist seit dem 18. Oktober 2026 im **offiziellen HACS-Store**

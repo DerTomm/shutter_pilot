@@ -31,6 +31,10 @@ class ShutterPositionStore:
         self._entry_id = entry_id
         self._store = Store(hass, STORAGE_VERSION, _storage_key(entry_id))
         self._covers: dict[str, dict[str, Any]] | None = None
+        # Was auf der Platte stand, bevor irgendeine Meldung nach dem Start
+        # etwas ueberschreibt. Die Wiederherstellung liest *das*, nicht den
+        # laufenden Stand.
+        self._loaded_snapshot: dict[str, dict[str, Any]] = {}
         self._pending: dict[str, dict[str, Any]] = {}
 
     async def async_load(self) -> dict[str, dict[str, Any]]:
@@ -44,6 +48,11 @@ class ShutterPositionStore:
         else:
             covers = raw.get("covers")
             self._covers = covers if isinstance(covers, dict) else {}
+            self._loaded_snapshot = {
+                cid: dict(rec)
+                for cid, rec in self._covers.items()
+                if isinstance(rec, dict)
+            }
             pending = raw.get("pending")
             self._pending = pending if isinstance(pending, dict) else {}
         return self._covers
@@ -126,6 +135,10 @@ class ShutterPositionStore:
             "updated": datetime.now().astimezone().isoformat(),
         }
         await self.async_save()
+
+    def get_loaded_snapshot(self) -> dict[str, dict[str, Any]]:
+        """Records as they were on disk when the store was first loaded."""
+        return {cid: dict(rec) for cid, rec in self._loaded_snapshot.items()}
 
     def get_record(self, cover_entity_id: str) -> dict[str, Any] | None:
         """Return stored record if loaded."""

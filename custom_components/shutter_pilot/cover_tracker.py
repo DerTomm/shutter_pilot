@@ -183,7 +183,13 @@ async def async_restore_positions_on_startup(
     await store.async_load()
     apply_covers_driven_from_persisted(hass, entry, shutters, store)
 
-    covers = await store.async_load()
+    await store.async_load()
+    # Der Stand von der Platte, nicht der laufende: `async_load()` gibt dasselbe
+    # Dict zurueck, das der Tracker beschreibt. Meldet ein Cover nach dem Start
+    # zuerst eine Standardposition (100 %), steht sie dort schon als "manual"
+    # drin, und der Vergleich unten sieht 100 gegen 100 - die Wiederherstellung
+    # war damit genau in dem Fall wirkungslos, fuer den es sie gibt.
+    covers = store.get_loaded_snapshot()
     if not covers:
         _LOGGER.debug("Startup restore: no persisted positions")
         return
@@ -238,6 +244,11 @@ async def async_restore_positions_on_startup(
                 "Startup restore",
                 source=SOURCE_AUTOMATION,
             )
+            # Die falsche Startmeldung wurde vom Tracker als Handfahrt
+            # verbucht (100 % = "oben"). Ohne diese Korrektur gilt der
+            # Rollladen danach als hochgefahren, und der naechste Morgen
+            # ueberspringt ihn.
+            note_manual_position(data, shutter_by_cover[cover_id], stored_pos)
             restored_any = True
 
         if not restored_any:
