@@ -4,6 +4,28 @@ Alle wichtigen Änderungen an Shutter Pilot werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [2.26.1]
+
+### Behoben
+- **Helligkeitsmodus: Abendfahrt fiel aus, nachdem der Rollladen von Hand ein
+  Stück gehoben wurde** (Claus, Forum #207). Wurde ein Rollladen nach der
+  Abendfahrt von Hand auf eine Zwischenposition gefahren (weder „auf" noch
+  „zu"), blieb er für den Rest des Tages als „heute schon unten gewesen"
+  vermerkt, und die echte Dämmerung später fuhr nicht mehr zu. Jetzt hebt eine
+  Handfahrt auf eine Zwischenposition diesen Vermerk auf. Damit ein
+  Rollladen, den du im Dunkeln von Hand ein Stück hebst, nicht sofort wieder
+  zufährt, merkt sich Shutter Pilot den Zeitpunkt jeder Handfahrt: in der
+  laufenden Dunkel-Episode bleibt es dabei, erst die **nächste** Episode
+  (die Helligkeit war zwischendurch wieder über der Schwelle) fährt wieder zu.
+- **Export:** der Wert `manual_override` steht jetzt mit der Beschriftung aus
+  dem Panel (`never (Bis zur nächsten Schließfahrt)`). Das gespeicherte Wort
+  `never` klang nach „nie".
+
+**Was ändert sich für mich?** Nur wenn du einen Rollladen im Helligkeitsmodus
+von Hand auf eine Zwischenposition fährst: Er wird bei der nächsten
+Dunkel-Episode wieder zugefahren, statt bis zum nächsten Tag stehen zu
+bleiben. Im Zeit- und Sonnenmodus ändert sich nichts.
+
 ## [2.26.0]
 
 ### Neu

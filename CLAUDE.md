@@ -48,7 +48,7 @@ custom_components/shutter_pilot/
   switch/sensor/binary_sensor.py   Entitäten
   services.py        Dienste (Gruppenaktionen)
   frontend/shutter-pilot-panel.js  Das komplette Panel (~4800 Z., ein File)
-tests/               pytest-Suite (910 Tests)
+tests/               pytest-Suite (916 Tests)
 tests/panel/         Panel in Node rendern – laeuft in der CI mit
 ```
 
@@ -290,7 +290,7 @@ Befehl dazu: **nicht vergessen**.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements-test.txt
-.venv/bin/pytest            # 910 Tests, ~21 s
+.venv/bin/pytest            # 916 Tests, ~21 s
 ```
 
 `.venv/` ist in `.gitignore`. In `pytest.ini` steht `-q` schon in `addopts` –
@@ -319,12 +319,53 @@ mich"), nicht als Commit-Log.
 
 ## Projektstand
 
-Version **2.26.0**, im Forum aktiv genutzt. Seit 18.10.2026 im
+Version **2.26.1**, im Forum aktiv genutzt. Seit 18.10.2026 im
 **HACS-Default-Store** (PR [hacs/default#9592](https://github.com/hacs/default/pull/9592), von frenck gemergt).
 
 ## Fortschritts-Log
 
 Vollständige Historie (ältere Einträge) steht in `docs/CHANGELOG_DEV.md` – hier nur die letzten fünf, damit diese Datei nicht wieder über das Kontextlimit wächst. Neuer Eintrag kommt hier dazu; wird die Liste hier zu lang, wandert der älteste nach `docs/CHANGELOG_DEV.md`.
+
+### 2026-10-26 – 2.26.1: der Unten-Merker, der die Hand nicht kannte
+
+Claus (simon42 #207, Export der Diele): Abendfahrt durch Sichtschutz
+(Template-Sensor 0 lx bei Licht an), Raffstore von Hand auf 98 % gehoben
+(`position_open` 50 – also **Zwischenposition**), Dämmerung 17:19 fuhr nicht
+zu. Nachgestellt, bevor irgendetwas geändert wurde. Ursache:
+`note_manual_position()` buchte nur die zwei Endlagen, eine Zwischenposition
+ließ den Unten-Merker stehen – und `brightness._run_down` springt über jeden
+Rollladen in `covers_driven_down` (die Zeile steht *vor* der Episoden-Prüfung
+aus 2.23.1).
+
+**Fix in zwei Teilen, weil Teil 1 allein ein Loch aufgemacht hätte:**
+1. Zwischenposition löscht den Unten-Merker (der Oben-Merker bleibt).
+2. Jede Handfahrt schreibt `data["_hand_moved_at"][cover]` (monotone Zeit wie
+   die Episoden); `_run_down` fasst einen Rollladen nicht an, wenn nach dem
+   Beginn der laufenden Dunkel-Episode von Hand gefahren wurde (strikt `>`).
+   Ohne Teil 2 fuhr „von Hand zu, im Dunkeln ein Stück auf" bei der nächsten
+   Lux-Meldung wieder zu: der Rollladen hatte keinen `down_fired`-Eintrag,
+   weil nicht die Helligkeit ihn zugefahren hatte (das gilt für Endlagen-Auf
+   schon seit 2.23.1 – dort jetzt ebenfalls abgedeckt).
+
+**Ein bestehender Test musste sich ändern:** `test_forum_2_17.py::
+test_a_position_in_between_says_nothing` hielt genau die alte Entscheidung
+fest („dazwischen sagt nichts", 2.17.0). Umgeschrieben auf „löscht den
+Unten-Merker, lässt den Oben-Merker" mit Begründung im Docstring; alle
+anderen Tests blieben unverändert grün.
+
+**Kleinigkeit aus derselben Meldung:** der Export schreibt `manual_override`
+mit der Panel-Beschriftung dazu (`never` las Claus als „nie").
+
+**Bewusste Verhaltensänderung:** ein von Hand auf eine Zwischenposition
+gefahrener Rollladen wird im Helligkeitsmodus in der nächsten Dunkel-Episode
+wieder zugefahren (vorher: nie, bis zum nächsten Tag), und eine „spätestens
+runter"-Frist (`episode=None`) fährt ihn einmal zu. Zeit- und Sonnenmodus
+unberührt.
+
+**Verifiziert:** `pytest` 916 grün (5 neue, `tests/test_hand_lift_new_episode.py`).
+Gegenproben: ohne Löschen des Merkers fallen der Claus-Test und der
+umgeschriebene 2.17-Test, ohne Zeitpunkt der Test „von Hand zu, im Dunkeln
+gehoben". Nicht in echtem Home Assistant geprüft.
 
 ### 2026-10-24 – 2.26.0: Höhe und Lamellen getrennt (Raffstore, Stufe 3)
 
@@ -445,41 +486,6 @@ Windschutz (Stufe 2) bekommt ein eigenes Prädikat mit eigener Sturmposition.
 nur `drive_after_close` fahren wie bisher. i18n 4 neue Schlüssel ×11.
 **Nicht im Browser und nicht im echten Home Assistant geprüft** – Florian soll
 es testen.
-
-### 2026-10-24 – 2.23.5: die Startmeldung, die die Wiederherstellung blind machte
-
-mag2000 (simon42 #201): abends zugefahren, Home Assistant neu gestartet,
-danach fahren alle Rollläden hoch. Beim Gegenlesen der Startlogik zeigte
-sich, dass Shutter Pilot nicht hochfährt – die Cover stehen nach dem Start
-auf der Standardposition der Cover-Integration, und die Wiederherstellung,
-die sie zurückholen soll, sah nichts zu tun.
-
-**Ursache, nachgestellt:** `ShutterPositionStore.async_load()` gibt dasselbe
-Dict zurück, das der Tracker beschreibt. Meldet ein Cover nach dem Start
-zuerst 100 % (`unavailable` → Standardwert, `old_position` ist `None`), bucht
-der Tracker das als Handfahrt, schreibt `100/manual` in genau dieses Dict und
-ruft `note_manual_position` (→ „oben"). Die Wiederherstellung liest ihre
-Datensätze erst nach 5 s und vergleicht dann 100 mit 100. Dazu stand der
-Rollladen danach in `covers_driven_up`, der nächste Morgen hätte ihn
-übersprungen.
-
-**Fix (2 Dateien):** der Speicher merkt sich beim ersten Laden den Stand von
-der Platte (`get_loaded_snapshot()`), die Wiederherstellung liest den, und
-nach einer Rückfahrt bucht `note_manual_position` die Endlage richtig um
-(unten statt oben). Das Verhalten bei übereinstimmender Meldung ist
-unverändert (eigener Test).
-
-**Offen / Risiko:** ob das mag2000s Ursache ist, ist nicht bestätigt – seine
-Cover-Art und das Log (`Startup restore`) fehlen. Die Wiederherstellung fährt
-jetzt in Fällen zurück, in denen sie vorher durch das Überschreiben blind war:
-ein Rollladen, der während der Neustartlücke von Hand bewegt wurde, geht auf
-die gespeicherte Position zurück; ein Neustart mitten in einer Fahrt kann auf
-die Zwischenposition zurückfahren. Beides kurze Zeitfenster, aber ein
-Verhaltenswechsel.
-
-**Verifiziert:** `pytest` 861 grün (3 neue, `tests/test_startup_restore_race.py`).
-Gegenprobe: Fix entschärft → genau die zwei Fix-Tests fallen, der Test
-„übereinstimmende Meldung" bleibt grün. Nicht in echtem Home Assistant geprüft.
 
 ### 2026-10-18 – 2.23.4: im offiziellen HACS-Store
 

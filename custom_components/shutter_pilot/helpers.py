@@ -2054,6 +2054,9 @@ def note_manual_position(
     up: set[str] = data.setdefault("covers_driven_up", set())
     down: set[str] = data.setdefault("covers_driven_down", set())
     open_pos = get_position_for_role(shutter, ROLE_OPEN)
+    # Der Zeitpunkt, nicht nur das Ergebnis: der Helligkeitsmodus fragt, ob
+    # nach dem Beginn der laufenden Dunkel-Episode von Hand gefahren wurde.
+    data.setdefault("_hand_moved_at", {})[cover] = time.monotonic()
 
     if abs(position - open_pos) <= POSITION_TOLERANCE_PCT:
         up.add(cover)
@@ -2062,6 +2065,14 @@ def note_manual_position(
     if manual_position_is_a_close(shutter, position):
         down.add(cover)
         up.discard(cover)
+        return
+    # Irgendwo dazwischen sagt nichts darueber, welche Tageshaelfte gilt - aber
+    # der Rollladen steht nicht mehr dort, wo ihn die Abendfahrt hingefahren
+    # hat. Der Unten-Merker war sonst fuer den Rest des Tages ein Riegel:
+    # Claus hob seine Diele auf 98 % an, und die echte Daemmerung eine Stunde
+    # spaeter fuhr nicht mehr zu. Wiederholt wird die Abendfahrt dadurch nicht
+    # in derselben Dunkel-Episode (brightness.py), erst in der naechsten.
+    down.discard(cover)
 
 
 def apply_covers_driven_from_persisted(

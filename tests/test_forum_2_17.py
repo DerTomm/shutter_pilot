@@ -183,11 +183,21 @@ class TestManualDriveIsBooked:
         assert data["covers_driven_up"] == set()
         assert data["covers_driven_down"] == {COVER}
 
-    def test_a_position_in_between_says_nothing(self):
+    def test_a_position_in_between_claims_no_half_of_the_day(self):
+        """Dazwischen ist weder "oben" noch "unten": der Oben-Merker bleibt wie
+        er war, ein Unten-Merker faellt aber (2.26.1) - der Rollladen steht
+        nicht mehr dort, wo ihn die Abendfahrt hingefahren hat (Claus, simon42
+        #207). Bis 2.26.0 hiess dieser Test "says nothing" und liess den
+        Unten-Merker stehen."""
         data = {"covers_driven_up": set(), "covers_driven_down": {COVER}}
         note_manual_position(data, SHUTTER, 55.0)
-        assert data["covers_driven_down"] == {COVER}
+        assert data["covers_driven_down"] == set()
         assert data["covers_driven_up"] == set()
+
+    def test_a_position_in_between_leaves_the_up_marker_alone(self):
+        data = {"covers_driven_up": {COVER}, "covers_driven_down": set()}
+        note_manual_position(data, SHUTTER, 55.0)
+        assert data["covers_driven_up"] == {COVER}
 
     def test_the_sets_are_mutated_in_place(self):
         """Neu zuweisen haenge den Scheduler an ein totes Set (2.10.0)."""

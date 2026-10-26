@@ -173,10 +173,28 @@ def _is_set(value: Any) -> bool:
     return True
 
 
+# The stored value of some keys is an internal name the panel shows with a
+# different label. Claus read `never` as "never overrides" - it means "until the
+# next closing run". The stored word stays visible, the label comes along.
+_VALUE_LABELS = {
+    "manual_override": {
+        "never": "Bis zur nächsten Schließfahrt",
+        "daily": "Nur am selben Tag",
+        "next_action": "Automatik hat Vorrang",
+    },
+}
+
+
+def _fmt_labelled(key: str, value: Any) -> str:
+    text = _fmt(value)
+    label = _VALUE_LABELS.get(key, {}).get(text)
+    return f"{text} ({label})" if label else text
+
+
 def _settings_table(obj: dict[str, Any]) -> list[str]:
     """All stored keys of one area or shutter, as a markdown table."""
     rows = [
-        f"| `{key}` | {_fmt(value)} |"
+        f"| `{key}` | {_fmt_labelled(key, value)} |"
         for key, value in sorted(obj.items())
         if key not in _SKIP_KEYS and not key.startswith("_") and _is_set(value)
     ]

@@ -263,6 +263,9 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
     # ist die Abendfahrt danach vorbei; hier ist sie es jetzt auch, bis eine
     # neue Episode beginnt (hell dazwischen, oder das Fenster schliesst).
     down_fired: dict[str, float] = data.setdefault("_b_down_fired", {})
+    # Wann ein Rollladen zuletzt von Hand bewegt wurde (monotone Zeit, wie die
+    # Episoden). Geschrieben von note_manual_position().
+    hand_moved: dict[str, float] = data.setdefault("_hand_moved_at", {})
 
     def _run_down(
         area: dict, area_id: str, reason: str, episode: float | None = None
@@ -281,6 +284,14 @@ async def setup_brightness_listener(hass: HomeAssistant, entry: ConfigEntry) -> 
             if cover_entity in covers_driven_down:
                 continue
             if episode is not None and down_fired.get(cover_entity) == episode:
+                continue
+            # Von Hand bewegt, seit diese Dunkel-Episode laeuft: die Hand hat
+            # in dieser Episode das letzte Wort, auch wenn die Helligkeit den
+            # Rollladen nicht selbst zugefahren hat (von Hand zu, von Hand
+            # wieder ein Stueck auf). Erst die naechste Episode darf ihn wieder
+            # zufahren. Strikt groesser: eine Handfahrt im selben Takt wie der
+            # Episodenbeginn liegt davor.
+            if episode is not None and hand_moved.get(cover_entity, -1.0) > episode:
                 continue
             if not is_shutter_automation_enabled(hass, entry, shutter) or shutter_held(
                 hass, entry, shutter

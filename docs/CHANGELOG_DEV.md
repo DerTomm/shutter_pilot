@@ -4,6 +4,41 @@ Vollständiges Fortschritts-Log von Shutter Pilot, ausgelagert aus `CLAUDE.md`, 
 
 Bei Fragen zur Historie: hier nachlesen oder `grep`/`graphify` benutzen, bevor eine Vermutung über eine frühere Entscheidung geäußert wird.
 
+### 2026-10-24 – 2.23.5: die Startmeldung, die die Wiederherstellung blind machte
+
+mag2000 (simon42 #201): abends zugefahren, Home Assistant neu gestartet,
+danach fahren alle Rollläden hoch. Beim Gegenlesen der Startlogik zeigte
+sich, dass Shutter Pilot nicht hochfährt – die Cover stehen nach dem Start
+auf der Standardposition der Cover-Integration, und die Wiederherstellung,
+die sie zurückholen soll, sah nichts zu tun.
+
+**Ursache, nachgestellt:** `ShutterPositionStore.async_load()` gibt dasselbe
+Dict zurück, das der Tracker beschreibt. Meldet ein Cover nach dem Start
+zuerst 100 % (`unavailable` → Standardwert, `old_position` ist `None`), bucht
+der Tracker das als Handfahrt, schreibt `100/manual` in genau dieses Dict und
+ruft `note_manual_position` (→ „oben"). Die Wiederherstellung liest ihre
+Datensätze erst nach 5 s und vergleicht dann 100 mit 100. Dazu stand der
+Rollladen danach in `covers_driven_up`, der nächste Morgen hätte ihn
+übersprungen.
+
+**Fix (2 Dateien):** der Speicher merkt sich beim ersten Laden den Stand von
+der Platte (`get_loaded_snapshot()`), die Wiederherstellung liest den, und
+nach einer Rückfahrt bucht `note_manual_position` die Endlage richtig um
+(unten statt oben). Das Verhalten bei übereinstimmender Meldung ist
+unverändert (eigener Test).
+
+**Offen / Risiko:** ob das mag2000s Ursache ist, ist nicht bestätigt – seine
+Cover-Art und das Log (`Startup restore`) fehlen. Die Wiederherstellung fährt
+jetzt in Fällen zurück, in denen sie vorher durch das Überschreiben blind war:
+ein Rollladen, der während der Neustartlücke von Hand bewegt wurde, geht auf
+die gespeicherte Position zurück; ein Neustart mitten in einer Fahrt kann auf
+die Zwischenposition zurückfahren. Beides kurze Zeitfenster, aber ein
+Verhaltenswechsel.
+
+**Verifiziert:** `pytest` 861 grün (3 neue, `tests/test_startup_restore_race.py`).
+Gegenprobe: Fix entschärft → genau die zwei Fix-Tests fallen, der Test
+„übereinstimmende Meldung" bleibt grün. Nicht in echtem Home Assistant geprüft.
+
 ### 2026-10-12 – 2.23.3: die 0, die keine leere Grenze ist
 
 Eine Forumsmeldung (Linos, simon42 #185): Hochfahren ab 06:30 Uhr und mehr
